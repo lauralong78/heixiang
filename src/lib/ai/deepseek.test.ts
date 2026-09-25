@@ -140,3 +140,25 @@ test("returns validated structured output and bounded request settings", async (
     });
   }
 });
+
+test("omits response_format for ordinary text calls", async () => {
+  process.env.DEEPSEEK_API_KEY = "test-secret";
+  delete process.env.DEEPSEEK_BASE_URL;
+
+  globalThis.fetch = (async (_input, init) => {
+    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    assert.equal("response_format" in body, false);
+
+    return new Response(
+      JSON.stringify({
+        model: "deepseek-flash",
+        choices: [{ finish_reason: "stop", message: { content: "ok" } }],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  }) as typeof fetch;
+
+  const result = await callDeepSeek({ task: "Reply briefly." });
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.output, { format: "text", text: "ok" });
+});

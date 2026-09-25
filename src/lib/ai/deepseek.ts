@@ -187,10 +187,9 @@ export async function callDeepSeek(
         model: config.model,
         messages: normalizedRequest.value.messages,
         max_tokens: normalizedRequest.value.maxOutputTokens,
-        response_format:
-          normalizedRequest.value.responseFormat === "json"
-            ? { type: "json_object" }
-            : { type: "text" },
+        ...(normalizedRequest.value.responseFormat === "json"
+          ? { response_format: { type: "json_object" } }
+          : {}),
         stream: false,
       }),
       cache: "no-store",
