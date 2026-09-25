@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 
 import type {
   ApiResult,
+  CheckPriority,
   CheckStatus,
   RepositoryCheckReport,
 } from "@/lib/github/types";
@@ -27,6 +28,12 @@ const statusMeta: Record<
     mark: "?",
     className: "border-amber-300 bg-amber-50 text-amber-900",
   },
+};
+
+const priorityMeta: Record<CheckPriority, { label: string; className: string }> = {
+  high: { label: "优先补齐", className: "bg-[#e55e34] text-white" },
+  medium: { label: "建议补齐", className: "bg-[#f2d36b] text-[#4c3b10]" },
+  low: { label: "可选完善", className: "bg-[#dfe5df] text-[#425047]" },
 };
 
 type ErrorState = {
@@ -196,6 +203,59 @@ export function RepositoryChecker() {
                   </div>
                 ))}
               </div>
+            </section>
+
+            <section className="mt-8 border-2 border-[#16241d] bg-[#fffdf7] p-6 sm:p-8" aria-labelledby="missing-heading">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#89938d] pb-3">
+                <div>
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#b24b2a]">
+                    Action list / next moves
+                  </p>
+                  <h2 id="missing-heading" className="mt-1 font-serif text-3xl font-black">
+                    你还缺什么
+                  </h2>
+                </div>
+                <span className="font-mono text-xs text-[#66716a]">{report.missing.length} 项待补齐</span>
+              </div>
+
+              {report.missing.length === 0 ? (
+                <p className="mt-5 border border-emerald-300 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                  当前规则范围内没有发现缺失项。仍建议人工核对演示可用性、功能真实性和提交格式。
+                </p>
+              ) : (
+                <div className="mt-5 grid gap-3">
+                  {report.missing.map((item) => {
+                    const priority = priorityMeta[item.priority];
+                    return (
+                      <article key={item.id} className="border border-[#c2c8c2] bg-[#f6f3eb] p-4 sm:p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <h3 className="text-lg font-bold">{item.label}</h3>
+                          <span className={`px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${priority.className}`}>
+                            {priority.label}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-[#56615b]">{item.summary}</p>
+                        {item.evidence.length > 0 && (
+                          <p className="mt-2 font-mono text-[11px] text-[#68736d]">
+                            已找到 {item.evidence.length} 条相关线索，但未达到该项最低证据要求。
+                          </p>
+                        )}
+                        {item.suggestion && (
+                          <p className="mt-3 border-t border-dashed border-[#c2c8c2] pt-3 text-sm leading-6 text-[#735140]">
+                            <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#b24b2a]">
+                              下一步
+                            </span>
+                            {item.suggestion}
+                          </p>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="mt-4 text-xs leading-5 text-[#68736d]">
+                “缺失”表示规则没有在 README 中找到足够证据；“无法确认”不会被误算成缺失。
+              </p>
             </section>
 
             <section className="mt-8 grid gap-5" aria-labelledby="result-heading">

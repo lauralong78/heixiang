@@ -109,7 +109,10 @@ async function githubFetch(path: string, accept: string): Promise<Response> {
   if (response.ok) return response;
 
   const remaining = response.headers.get("x-ratelimit-remaining");
-  if (response.status === 429 || (response.status === 403 && remaining === "0")) {
+  if (
+    response.status === 429 ||
+    (response.status === 403 && (remaining === "0" || response.headers.has("retry-after")))
+  ) {
     throw new GitHubRequestError(
       "GITHUB_RATE_LIMITED",
       "GitHub API 请求额度已用尽，请在额度恢复后重试。",
@@ -139,6 +142,52 @@ async function githubFetch(path: string, accept: string): Promise<Response> {
     response.status === 403,
     502,
   );
+}
+
+export async function readBoundedResponseText(
+  response: Response,
+  maxBytes: number,
+): Promise<{ text: string; truncated: boolean }> {
+  if (!response.body) return { text: "", truncated: false };
+
+  const declaredLength = Number(response.headers.get("content-length"));
+  let truncated = Number.isFinite(declaredLength) && declaredLength > maxBytes;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let consumed = 0;
+  let text = "";
+
+  try {
+    while (consumed < maxBytes) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const remaining = maxBytes - consumed;
+      const chunk = value.byteLength > remaining ? value.slice(0, remaining) : value;
+      consumed += chunk.byteLength;
+      text += decoder.decode(chunk, { stream: true });
+
+      if (value.byteLength > remaining) {
+        truncated = true;
+        await reader.cancel();
+        break;
+      }
+    }
+
+    if (consumed >= maxBytes && !truncated) {
+      const probe = await reader.read();
+      if (!probe.done) {
+        truncated = true;
+        await reader.cancel();
+      }
+    }
+
+    text += decoder.decode();
+    return { text, truncated };
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
+  }
 }
 
 type GitHubRepositoryResponse = {
@@ -214,7 +263,11 @@ export async function fetchPublicRepository(coordinates: RepositoryCoordinates) 
   }
   if (!readmeResponse.ok) {
     const remaining = readmeResponse.headers.get("x-ratelimit-remaining");
-    if (readmeResponse.status === 429 || (readmeResponse.status === 403 && remaining === "0")) {
+    if (
+      readmeResponse.status === 429 ||
+      (readmeResponse.status === 403 &&
+        (remaining === "0" || readmeResponse.headers.has("retry-after")))
+    ) {
       throw new GitHubRequestError(
         "GITHUB_RATE_LIMITED",
         "GitHub API 请求额度已用尽，请在额度恢复后重试。",
@@ -230,8 +283,18 @@ export async function fetchPublicRepository(coordinates: RepositoryCoordinates) 
     );
   }
 
-  const raw = await readmeResponse.text();
-  const readme = raw.slice(0, MAX_README_BYTES);
+  let boundedReadme: { text: string; truncated: boolean };
+  try {
+    boundedReadme = await readBoundedResponseText(readmeResponse, MAX_README_BYTES);
+  } catch {
+    throw new GitHubRequestError(
+      "README_UNAVAILABLE",
+      "仓库可访问，但 GitHub 暂时无法读取 README 内容。",
+      true,
+      503,
+    );
+  }
+  const { text: readme, truncated } = boundedReadme;
   const contentDisposition = readmeResponse.headers.get("content-disposition") ?? "";
   const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
 
@@ -239,6 +302,6 @@ export async function fetchPublicRepository(coordinates: RepositoryCoordinates) 
     repository,
     readme,
     readmePath: filenameMatch?.[1] ?? "README",
-    truncated: raw.length > MAX_README_BYTES,
+    truncated,
   };
 }

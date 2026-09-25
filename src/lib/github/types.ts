@@ -1,4 +1,5 @@
 export type CheckStatus = "pass" | "fail" | "unknown";
+export type CheckPriority = "high" | "medium" | "low";
 
 export type ApiResult<T> =
   | { ok: true; data: T; requestId: string }
@@ -37,13 +38,20 @@ export type RepositoryCheckItem = {
     | "stack"
     | "challenges"
     | "demo"
-    | "roadmap";
+    | "roadmap"
+    | "risks";
   label: string;
+  priority: CheckPriority;
   status: CheckStatus;
   summary: string;
   evidence: CheckEvidence[];
   suggestion: string | null;
 };
+
+export type MissingRepositoryCheck = Pick<
+  RepositoryCheckItem,
+  "id" | "label" | "priority" | "summary" | "suggestion" | "evidence"
+>;
 
 export type RepositoryCheckReport = {
   repository: RepositoryMetadata;
@@ -54,5 +62,6 @@ export type RepositoryCheckReport = {
     truncated: boolean;
   };
   checks: RepositoryCheckItem[];
+  missing: MissingRepositoryCheck[];
   totals: Record<CheckStatus, number>;
 };

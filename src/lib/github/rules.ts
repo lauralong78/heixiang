@@ -1,4 +1,5 @@
 import type {
+  CheckPriority,
   CheckEvidence,
   RepositoryCheckItem,
   RepositoryCheckReport,
@@ -9,6 +10,8 @@ const MAX_EVIDENCE = 3;
 type Rule = {
   id: Exclude<RepositoryCheckItem["id"], "readme">;
   label: string;
+  priority: CheckPriority;
+  minimumEvidence?: number;
   patterns: RegExp[];
   passSummary: string;
   failSummary: string;
@@ -19,6 +22,7 @@ const rules: Rule[] = [
   {
     id: "problem",
     label: "问题与目标用户",
+    priority: "high",
     patterns: [
       /(?:problem|motivation|why|pain point|target user|user story|background)/i,
       /(?:问题|痛点|背景|动机|目标用户|适用人群|用户故事|为谁)/,
@@ -30,6 +34,7 @@ const rules: Rule[] = [
   {
     id: "features",
     label: "核心功能",
+    priority: "high",
     patterns: [
       /(?:features?|capabilit(?:y|ies)|what it does|highlights?)/i,
       /(?:核心功能|主要功能|功能介绍|产品能力|亮点)/,
@@ -41,6 +46,7 @@ const rules: Rule[] = [
   {
     id: "setup",
     label: "运行方式",
+    priority: "high",
     patterns: [
       /(?:install(?:ation)?|getting started|quick ?start|usage|run locally|prerequisites?)/i,
       /(?:安装|快速开始|开始使用|本地运行|运行方式|使用方法|环境要求)/,
@@ -53,6 +59,7 @@ const rules: Rule[] = [
   {
     id: "stack",
     label: "技术栈",
+    priority: "medium",
     patterns: [
       /(?:tech(?:nology)? stack|built with|architecture|dependencies)/i,
       /(?:技术栈|技术选型|系统架构|主要依赖|使用技术)/,
@@ -65,6 +72,7 @@ const rules: Rule[] = [
   {
     id: "challenges",
     label: "问题与困难",
+    priority: "medium",
     patterns: [
       /(?:challenges?|difficult(?:y|ies)|limitations?|known issues?|trade-?offs?|lessons? learned)/i,
       /(?:困难|挑战|已知问题|局限|限制|取舍|踩坑|经验教训)/,
@@ -76,6 +84,7 @@ const rules: Rule[] = [
   {
     id: "demo",
     label: "演示或部署",
+    priority: "medium",
     patterns: [
       /(?:live demo|demo video|deployment|deployed|preview|try it|screenshots?)/i,
       /(?:在线演示|演示视频|部署地址|访问地址|产品截图|效果图)/,
@@ -89,13 +98,28 @@ const rules: Rule[] = [
   {
     id: "roadmap",
     label: "后续改进",
+    priority: "medium",
+    minimumEvidence: 2,
     patterns: [
       /(?:roadmap|future work|next steps?|planned|todo|what'?s next)/i,
       /(?:后续计划|未来工作|下一步|路线图|待办|未来改进|计划功能)/,
     ],
     passSummary: "README 中找到后续计划或改进方向。",
-    failSummary: "README 中未找到后续计划或改进方向。",
-    suggestion: "增加“后续改进”小节，区分近期可做事项和长期设想。",
+    failSummary: "README 中未找到至少 2 个可识别的后续改进方向。",
+    suggestion: "增加“后续改进”小节，列出 2–3 个方向，并说明优先级和代价。",
+  },
+  {
+    id: "risks",
+    label: "风险与边界",
+    priority: "high",
+    minimumEvidence: 3,
+    patterns: [
+      /(?:risk|boundary|limitation|known issue|security|privacy|trade-?off)/i,
+      /(?:风险|边界|限制|局限|已知问题|安全|隐私|取舍)/,
+    ],
+    passSummary: "README 中找到至少 3 个可识别的风险、边界或处理说明。",
+    failSummary: "README 中未找到至少 3 个可识别的风险、边界或处理说明。",
+    suggestion: "至少列出 3 个风险或边界，并分别写明处理方式；不要只写一句笼统的“存在风险”。",
   },
 ];
 
@@ -128,12 +152,13 @@ function findEvidence(lines: string[], patterns: RegExp[]): CheckEvidence[] {
 export function inspectReadme(
   content: string | null,
   options: { path: string | null; truncated: boolean },
-): Pick<RepositoryCheckReport, "readme" | "checks" | "totals"> {
+): Pick<RepositoryCheckReport, "readme" | "checks" | "missing" | "totals"> {
   const readmeStatus = content === null ? "fail" : "pass";
   const lines = content?.split(/\r?\n/) ?? [];
   const readmeCheck: RepositoryCheckItem = {
     id: "readme",
     label: "README",
+    priority: "high",
     status: readmeStatus,
     summary:
       content === null
@@ -156,6 +181,7 @@ export function inspectReadme(
         return {
           id: rule.id,
           label: rule.label,
+          priority: rule.priority,
           status: "unknown",
           summary: "缺少 README，无法检查此项。",
           evidence: [],
@@ -164,13 +190,15 @@ export function inspectReadme(
       }
 
       const evidence = findEvidence(lines, rule.patterns);
+      const minimumEvidence = rule.minimumEvidence ?? 1;
       return {
         id: rule.id,
         label: rule.label,
-        status: evidence.length > 0 ? "pass" : "fail",
-        summary: evidence.length > 0 ? rule.passSummary : rule.failSummary,
+        priority: rule.priority,
+        status: evidence.length >= minimumEvidence ? "pass" : "fail",
+        summary: evidence.length >= minimumEvidence ? rule.passSummary : rule.failSummary,
         evidence,
-        suggestion: evidence.length > 0 ? null : rule.suggestion,
+        suggestion: evidence.length >= minimumEvidence ? null : rule.suggestion,
       };
     }),
   ];
@@ -190,6 +218,16 @@ export function inspectReadme(
       truncated: options.truncated,
     },
     checks,
+    missing: checks
+      .filter((check) => check.status === "fail")
+      .map(({ id, label, priority, summary, suggestion, evidence }) => ({
+        id,
+        label,
+        priority,
+        summary,
+        suggestion,
+        evidence,
+      })),
     totals,
   };
 }
