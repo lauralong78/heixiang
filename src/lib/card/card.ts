@@ -182,12 +182,15 @@ export function drawCard(canvas: HTMLCanvasElement, draft: CardDraft) {
     context.stroke();
   }
 
-  context.fillStyle = "#b7ff3c";
-  roundedRect(context, 78, 64, 172, 42, 21);
-  context.fillStyle = "#15111e";
+  const statusLabel = "OPEN TO TEAM";
   context.font = '800 20px "Microsoft YaHei", "Noto Sans SC", sans-serif';
   context.letterSpacing = "2px";
-  context.fillText("OPEN TO TEAM", 96, 92);
+  const statusPadding = 18;
+  const statusWidth = context.measureText(statusLabel).width + statusPadding * 2;
+  context.fillStyle = "#b7ff3c";
+  roundedRect(context, 78, 64, statusWidth, 42, 21);
+  context.fillStyle = "#15111e";
+  context.fillText(statusLabel, 78 + statusPadding, 92);
   context.letterSpacing = "0px";
 
   context.fillStyle = "#777087";

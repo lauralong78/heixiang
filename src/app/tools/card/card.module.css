@@ -309,6 +309,7 @@
 }
 
 .cardTopline > span {
+  white-space: nowrap;
   padding: 7px 13px;
   border-radius: 999px;
   color: #15111e;
