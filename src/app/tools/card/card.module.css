@@ -1,0 +1,570 @@
+.page {
+  --ink: #121017;
+  --paper: #f4f0e8;
+  --acid: #b7ff3c;
+  --violet: #9788ff;
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 28px clamp(20px, 5vw, 76px) 72px;
+  color: var(--ink);
+  background:
+    linear-gradient(rgba(18, 16, 23, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 16, 23, 0.055) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: var(--font-geist-sans), "Microsoft YaHei", sans-serif;
+}
+
+.ambient {
+  position: absolute;
+  top: -180px;
+  right: -160px;
+  width: 520px;
+  height: 520px;
+  border: 90px solid rgba(151, 136, 255, 0.15);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1480px;
+  margin: 0 auto 72px;
+}
+
+.backLink,
+.toolMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.backLink {
+  padding: 9px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.backLink:focus-visible,
+.clearButton:focus-visible,
+.exportButton:focus-visible,
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline: 3px solid var(--violet);
+  outline-offset: 3px;
+}
+
+.statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #67a400;
+  box-shadow: 0 0 0 5px rgba(103, 164, 0, 0.13);
+}
+
+.intro {
+  position: relative;
+  z-index: 1;
+  max-width: 1480px;
+  margin: 0 auto 44px;
+}
+
+.eyebrow {
+  margin: 0 0 16px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #655c70;
+}
+
+.intro h1 {
+  max-width: 850px;
+  margin: 0;
+  font-size: clamp(42px, 6.1vw, 88px);
+  font-weight: 850;
+  line-height: 0.95;
+  letter-spacing: -0.065em;
+}
+
+.lede {
+  max-width: 560px;
+  margin: 24px 0 0;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #5e5765;
+}
+
+.workspace {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(340px, 0.8fr) minmax(500px, 1.2fr);
+  gap: 18px;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.formPanel,
+.previewPanel {
+  border: 1px solid rgba(18, 16, 23, 0.18);
+  background: rgba(255, 253, 249, 0.88);
+  box-shadow: 0 18px 60px rgba(44, 35, 54, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.formPanel {
+  padding: 28px;
+}
+
+.previewPanel {
+  min-width: 0;
+  padding: 28px;
+}
+
+.panelHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.panelHeading > div {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.panelHeading span,
+.panelHeading h2 {
+  margin: 0;
+}
+
+.panelHeading > div > span {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #756b7b;
+}
+
+.panelHeading h2 {
+  font-size: 19px;
+  letter-spacing: -0.025em;
+}
+
+.clearButton {
+  border: 0;
+  padding: 7px 0;
+  color: #5e5765;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.clearButton:hover:not(:disabled) {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.clearButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 16px;
+}
+
+.field {
+  min-width: 0;
+}
+
+.fullField {
+  grid-column: 1 / -1;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.labelRow label {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.labelRow span,
+.field > p {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  color: #817889;
+}
+
+.field input,
+.field textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #cfc8d0;
+  border-radius: 0;
+  padding: 12px 13px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.field textarea {
+  min-height: 104px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.field input:hover,
+.field textarea:hover {
+  border-color: #9a909f;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--ink);
+  background: #fff;
+  box-shadow: inset 4px 0 0 var(--acid);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #a19aa5;
+}
+
+.field > p {
+  margin: 7px 0 0;
+  line-height: 1.45;
+}
+
+.liveBadge {
+  padding: 5px 9px;
+  border: 1px solid #70a718;
+  border-radius: 999px;
+  color: #4d7908;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  padding: clamp(22px, 3.2vw, 48px);
+  color: #faf8ff;
+  background:
+    repeating-linear-gradient(107deg, transparent 0 50px, rgba(183, 255, 60, 0.055) 50px 51px),
+    radial-gradient(circle at 88% 12%, rgba(151, 136, 255, 0.18), transparent 26%),
+    linear-gradient(135deg, #191520, #09080d);
+  box-shadow: 0 25px 50px rgba(18, 16, 23, 0.26);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  top: -16px;
+  right: -25px;
+  width: 150px;
+  height: 30px;
+  transform: rotate(11deg);
+  background: var(--acid);
+}
+
+.cardTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTopline > span {
+  padding: 7px 13px;
+  border-radius: 999px;
+  color: #15111e;
+  background: var(--acid);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: clamp(8px, 1vw, 11px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.cardTopline b {
+  color: #777087;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: clamp(8px, 0.9vw, 11px);
+  letter-spacing: 0.04em;
+}
+
+.identity {
+  margin-top: clamp(16px, 2vw, 28px);
+}
+
+.identity h3 {
+  overflow: hidden;
+  margin: 0;
+  font-size: clamp(27px, 4vw, 52px);
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity p {
+  overflow: hidden;
+  margin: 10px 0 0;
+  color: var(--acid);
+  font-size: clamp(13px, 1.55vw, 20px);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: #777087 !important;
+}
+
+.cardRows {
+  display: grid;
+  gap: clamp(8px, 1.3vw, 15px);
+  margin-top: clamp(14px, 1.7vw, 22px);
+  padding-top: clamp(12px, 1.4vw, 18px);
+  border-top: 1px solid #433b4f;
+}
+
+.tagRow {
+  display: grid;
+  grid-template-columns: clamp(42px, 7vw, 74px) 1fr;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tagRow > span {
+  color: #c9bfff;
+  font-size: clamp(10px, 1.25vw, 14px);
+  font-weight: 700;
+}
+
+.tagRow > div {
+  display: flex;
+  min-width: 0;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.tagRow b {
+  display: block;
+  overflow: hidden;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #f2efff;
+  background: #28233d;
+  font-size: clamp(8px, 1.1vw, 12px);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagRow .placeholderTag {
+  color: #777087;
+  background: #211d31;
+}
+
+.about {
+  margin-top: auto;
+  padding-right: 50px;
+}
+
+.about span {
+  color: #777087;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: clamp(7px, 0.9vw, 10px);
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.about p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 6px 0 0;
+  font-size: clamp(9px, 1.45vw, 16px);
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cardPlus {
+  position: absolute;
+  right: clamp(22px, 3.2vw, 48px);
+  bottom: clamp(20px, 3vw, 42px);
+  display: grid;
+  width: clamp(24px, 3.5vw, 38px);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  color: #15111e;
+  background: var(--acid);
+  font-size: clamp(15px, 2vw, 23px);
+  font-weight: 900;
+}
+
+.exportArea {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.55fr) 1fr;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 24px;
+}
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 52px;
+  border: 1px solid var(--ink);
+  padding: 0 18px;
+  color: #f8f5ed;
+  background: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.exportButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: #2b2532;
+}
+
+.exportButton:disabled {
+  border-color: #b7b0b8;
+  color: #837c85;
+  background: #d8d2d7;
+  cursor: not-allowed;
+}
+
+.exportHint,
+.status {
+  margin: 0;
+  color: #6e6673;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.status {
+  grid-column: 1 / -1;
+  min-height: 15px;
+  color: #413949;
+}
+
+@media (max-width: 980px) {
+  .header {
+    margin-bottom: 52px;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .previewPanel {
+    order: -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .page {
+    padding: 20px 14px 48px;
+  }
+
+  .header {
+    align-items: flex-start;
+    margin-bottom: 44px;
+  }
+
+  .toolMark {
+    max-width: 130px;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .intro {
+    margin-bottom: 30px;
+  }
+
+  .intro h1 {
+    font-size: clamp(42px, 14vw, 62px);
+  }
+
+  .formPanel,
+  .previewPanel {
+    padding: 18px;
+  }
+
+  .fieldGrid,
+  .exportArea {
+    grid-template-columns: 1fr;
+  }
+
+  .fullField,
+  .status {
+    grid-column: auto;
+  }
+
+  .card {
+    padding: 18px;
+  }
+
+  .about {
+    margin-top: auto;
+  }
+
+  .cardPlus {
+    right: 18px;
+    bottom: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exportButton,
+  .field input,
+  .field textarea {
+    transition: none;
+  }
+}
