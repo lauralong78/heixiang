@@ -13,6 +13,7 @@ import {
   safeFileStem,
   validateUrl,
 } from "@/lib/docs-assistant/generator";
+import { generateReadmePrompt } from "@/lib/docs-assistant/prompt";
 import type {
   DocsAssistantDraft,
   GeneratedDocuments,
@@ -91,6 +92,7 @@ export function DocsAssistant() {
   const [status, setStatus] = useState("");
   const [storageWarning, setStorageWarning] = useState("");
   const missingItems = useMemo(() => getMissingItems(draft), [draft]);
+  const aiPrompt = useMemo(() => generateReadmePrompt(draft), [draft]);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,15 +189,24 @@ export function DocsAssistant() {
     }
   }
 
+  async function copyAiPrompt() {
+    try {
+      await navigator.clipboard.writeText(aiPrompt);
+      setStatus("给外部 AI 的 README 提示词已复制。请粘贴到能够访问项目文件的 AI 中使用。");
+    } catch {
+      setStatus("复制失败：浏览器未授予剪贴板权限，请展开提示词后手动复制。");
+    }
+  }
+
+  function downloadAiPrompt() {
+    const fileName = `${safeFileStem(draft.projectName)}-README-AI-提示词.txt`;
+    downloadText(fileName, aiPrompt, "text/plain;charset=utf-8");
+    setStatus(`${fileName} 已下载。`);
+  }
+
   function download(key: DocumentKey) {
     const fileName = key === "readme" ? "README.md" : `${safeFileStem(draft.projectName)}-一页说明.md`;
-    const blob = new Blob([documents[key]], { type: "text/markdown;charset=utf-8" });
-    const href = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = href;
-    anchor.download = fileName;
-    anchor.click();
-    URL.revokeObjectURL(href);
+    downloadText(fileName, documents[key], "text/markdown;charset=utf-8");
     setStatus(`${fileName} 已下载，内容为当前编辑版本。`);
   }
 
@@ -228,6 +239,27 @@ export function DocsAssistant() {
             {storageWarning || status}
           </div>
         )}
+
+        <section className={styles.promptPanel} aria-labelledby="ai-prompt-title">
+          <div className={styles.promptIntro}>
+            <div>
+              <span className={styles.promptLabel}>HANDOFF / 给你的 AI</span>
+              <h2 id="ai-prompt-title">让 AI 先读项目，再替你整理 README</h2>
+              <p>复制提示词，粘贴给能够访问你项目文件的 AI。它会按这份资料表逐项查证；本站不会读取、上传或发送你的项目。</p>
+            </div>
+            <div className={styles.promptActions}>
+              <button type="button" onClick={copyAiPrompt}>复制提示词</button>
+              <button type="button" className={styles.promptDownload} onClick={downloadAiPrompt}>下载 .txt</button>
+            </div>
+          </div>
+          <details className={styles.promptDetails}>
+            <summary><span>预览完整提示词</span><small>{aiPrompt.length.toLocaleString("zh-CN")} 字符</small></summary>
+            <div className={styles.promptPreview}>
+              <p>使用前请确认你的 AI 已打开或能够读取目标项目目录；这份提示词本身不会授予文件权限。</p>
+              <textarea aria-label="给外部 AI 的 README 生成提示词" readOnly spellCheck={false} value={aiPrompt} />
+            </div>
+          </details>
+        </section>
 
         <div className={styles.workspace}>
           <form className={styles.formPanel} onSubmit={(event) => event.preventDefault()}>
@@ -355,6 +387,16 @@ export function DocsAssistant() {
 
 function documentLabel(key: DocumentKey) {
   return key === "readme" ? "README.md 草稿" : "一页项目说明";
+}
+
+function downloadText(fileName: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const href = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = href;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(href);
 }
 
 function TextField({ id, label, value, placeholder, limit, multiline = false, inputMode, error, onChange }: {
