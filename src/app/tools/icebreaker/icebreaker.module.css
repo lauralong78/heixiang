@@ -33,15 +33,14 @@
 
 .page input:focus-visible,
 .page select:focus-visible,
-.page button:focus-visible,
-.backLink:focus-visible {
+.page button:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 
 .topbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 20px;
   max-width: 1440px;
   margin: 0 auto;
@@ -49,8 +48,7 @@
   padding: 10px 0 18px;
 }
 
-.topbar p,
-.backLink {
+.topbar p {
   margin: 0;
   color: var(--muted);
   font-family: var(--font-geist-mono), monospace;
@@ -58,8 +56,6 @@
   font-weight: 700;
   letter-spacing: 0.08em;
 }
-
-.backLink { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); text-underline-offset: 4px; }
 
 .hero {
   display: grid;

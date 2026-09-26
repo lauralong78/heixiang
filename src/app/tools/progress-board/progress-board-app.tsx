@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import {
@@ -228,7 +227,6 @@ export function ProgressBoardApp() {
       <main className={styles.page}>
         <div className={styles.scanline} aria-hidden="true" />
         <header className={styles.topbar}>
-          <Link href="/" className={styles.backLink}>← 返回工具箱</Link>
           <span>LOCAL MODE · 无需登录</span>
         </header>
         <section className={styles.setupShell}>
@@ -263,7 +261,6 @@ export function ProgressBoardApp() {
     <main className={styles.page}>
       <div className={styles.scanline} aria-hidden="true" />
       <header className={styles.topbar}>
-        <Link href="/" className={styles.backLink}>← 返回工具箱</Link>
         <span>LOCAL MODE · 自动保存</span>
       </header>
 

@@ -32,12 +32,11 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   max-width: 1480px;
   margin: 0 auto 72px;
 }
 
-.backLink,
 .toolMark {
   display: inline-flex;
   align-items: center;
@@ -49,18 +48,6 @@
   text-transform: uppercase;
 }
 
-.backLink {
-  padding: 9px 0;
-  text-decoration: none;
-  color: inherit;
-}
-
-.backLink:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.backLink:focus-visible,
 .clearButton:focus-visible,
 .exportButton:focus-visible,
 .field input:focus-visible,

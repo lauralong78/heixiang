@@ -105,6 +105,43 @@ button, input { font: inherit; }
   backdrop-filter: blur(12px);
 }
 
+.tool-back-nav {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.tool-back-nav__inner {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+}
+
+.tool-back-nav__link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.65rem 0.5rem 0.35rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 680;
+  text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+
+.tool-back-nav__link:hover {
+  background: var(--surface-strong);
+  color: var(--accent-hover);
+}
+
+.tool-back-nav__icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+}
+
 .brand-mark {
   display: inline-flex;
   align-items: center;

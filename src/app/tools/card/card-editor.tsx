@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 
 import {
   CARD_LIMITS,
@@ -91,9 +90,6 @@ export function CardEditor() {
     <main className={styles.page}>
       <div className={styles.ambient} aria-hidden="true" />
       <header className={styles.header}>
-        <Link className={styles.backLink} href="/">
-          <span aria-hidden="true">←</span> 返回工具箱
-        </Link>
         <div className={styles.toolMark}>
           <span className={styles.statusDot} aria-hidden="true" />
           无需登录 · 本地生成

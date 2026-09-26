@@ -52,7 +52,7 @@
 .topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: clamp(46px, 7vw, 100px);
   color: var(--pb-muted);
   font-family: var(--font-geist-mono), monospace;
@@ -61,9 +61,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-
-.backLink { display: inline-flex; align-items: center; min-height: 44px; color: var(--pb-ink); text-decoration: none; }
-.backLink:hover { color: var(--pb-acid); }
 
 .setupShell {
   display: grid;
@@ -134,8 +131,7 @@
 .page input:focus-visible,
 .page select:focus-visible,
 .page button:focus-visible,
-.secondaryButton:focus-within,
-.backLink:focus-visible {
+.secondaryButton:focus-within {
   outline: 3px solid var(--pb-acid);
   outline-offset: 3px;
 }

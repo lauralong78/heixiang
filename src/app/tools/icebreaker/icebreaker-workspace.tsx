@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -205,7 +204,6 @@ export function IcebreakerWorkspace() {
   return (
     <main className={styles.page}>
       <header className={styles.topbar}>
-        <Link href="/" className={styles.backLink}>返回工具箱</Link>
         <p>LOCAL ONLY · NO LOGIN · {activity.participants.length}/{MAX_PARTICIPANTS}</p>
       </header>
 

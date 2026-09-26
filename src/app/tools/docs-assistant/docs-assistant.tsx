@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { DOCS_ASSISTANT_AI } from "@/lib/docs-assistant/ai-boundary";
@@ -207,7 +206,6 @@ export function DocsAssistant() {
       <div className={styles.shell}>
         <header className={styles.hero}>
           <div>
-            <Link className={styles.backLink} href="/">← 返回工具箱</Link>
             <p className={styles.kicker}>HACKKIT / DELIVERY DESK 203</p>
             <h1>把真实项目，<br />讲得完整。</h1>
             <p className={styles.lede}>填写你已知道的事实。空白内容会被标为“待补充”，不会被自动编造。</p>
