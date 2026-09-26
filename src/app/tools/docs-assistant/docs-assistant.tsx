@@ -349,7 +349,15 @@ export function DocsAssistant() {
 
           <div className={styles.documentTabs} role="tablist" aria-label="选择文档">
             {(["readme", "onePager"] as const).map((key) => (
-              <button key={key} type="button" role="tab" aria-selected={activeDocument === key} onClick={() => setActiveDocument(key)}>
+              <button
+                key={key}
+                id={`document-tab-${key}`}
+                type="button"
+                role="tab"
+                aria-selected={activeDocument === key}
+                aria-controls="document-panel"
+                onClick={() => setActiveDocument(key)}
+              >
                 {documentLabel(key)} {edited[key] && <small>已手动修改</small>}
               </button>
             ))}
@@ -360,7 +368,12 @@ export function DocsAssistant() {
           </div>
 
           <div className={styles.documentDesk}>
-            <div className={`${styles.editorPane} ${activeView !== "edit" ? styles.mobileHidden : ""}`}>
+            <div
+              id="document-panel"
+              role="tabpanel"
+              aria-labelledby={`document-tab-${activeDocument}`}
+              className={`${styles.editorPane} ${activeView !== "edit" ? styles.mobileHidden : ""}`}
+            >
               <div className={styles.paneLabel}><span>MARKDOWN EDITOR</span><span>{currentText.length.toLocaleString("zh-CN")} 字符</span></div>
               <textarea aria-label={`${documentLabel(activeDocument)} Markdown 编辑器`} value={currentText} spellCheck={false} onChange={(event) => {
                 setDocuments((current) => ({ ...current, [activeDocument]: event.target.value }));
@@ -368,7 +381,11 @@ export function DocsAssistant() {
                 setStatus("");
               }} />
             </div>
-            <div className={`${styles.previewPane} ${activeView !== "preview" ? styles.mobileHidden : ""}`}>
+            <div
+              role="region"
+              aria-label={`${documentLabel(activeDocument)}安全预览`}
+              className={`${styles.previewPane} ${activeView !== "preview" ? styles.mobileHidden : ""}`}
+            >
               <div className={styles.paneLabel}><span>SAFE PREVIEW</span><span>NO innerHTML</span></div>
               <MarkdownPreview markdown={currentText} />
             </div>

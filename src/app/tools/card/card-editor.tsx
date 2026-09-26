@@ -115,6 +115,7 @@ export function CardEditor() {
               className={styles.clearButton}
               type="button"
               onClick={() => {
+                if (!window.confirm("确认清空这张名片的全部内容吗？此操作无法撤销。")) return;
                 setDraft(EMPTY_CARD);
                 setStatus("内容已清空。");
               }}

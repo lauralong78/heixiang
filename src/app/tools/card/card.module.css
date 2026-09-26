@@ -157,6 +157,7 @@
 
 .clearButton {
   border: 0;
+  min-height: 44px;
   padding: 7px 0;
   color: #5e5765;
   background: transparent;

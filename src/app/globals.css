@@ -345,6 +345,7 @@ button, input { font: inherit; }
 .category-button {
   border: 1px solid var(--line);
   border-right: 0;
+  min-height: 44px;
   padding: 0.7rem 0.9rem;
   background: var(--surface);
   color: var(--text-muted);
