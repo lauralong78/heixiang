@@ -9,8 +9,8 @@ export default function Home() {
         <div className="shell-container hero-grid">
           <div className="hero-copy">
             <h1 className="hero-title">
-              <span>黑客松现场，</span>
-              <span>用得到的工具。</span>
+              <span>黑箱，</span>
+              <span>现场工具。</span>
             </h1>
             <p className="hero-description">
               做名片、查仓库、盯进度、现场配对，或者整理 README。每个工具都能单独使用，不用登录，也不用按固定流程走。

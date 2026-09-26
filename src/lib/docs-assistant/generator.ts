@@ -330,5 +330,5 @@ ${missing}
 
 export function safeFileStem(projectName: string) {
   const stem = projectName.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 50);
-  return stem || "hackkit-project";
+  return stem || "黑箱-项目";
 }

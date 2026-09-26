@@ -4,9 +4,9 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="shell-container flex h-16 items-center justify-between gap-4 md:h-[72px]">
-        <Link href="/" className="brand-mark focus-ring" aria-label="HackKit 首页">
+        <Link href="/" className="brand-mark focus-ring" aria-label="黑箱首页">
           <span className="brand-bracket" aria-hidden="true">[</span>
-          <span>HACKKIT</span>
+          <span>黑箱</span>
           <span className="brand-bracket" aria-hidden="true">]</span>
         </Link>
 

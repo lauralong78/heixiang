@@ -50,7 +50,7 @@ const FIELD_SECTIONS: Array<{
     title: "01 · 项目是什么",
     note: "先说清问题，再说功能。",
     fields: [
-      { name: "projectName", label: "项目名", placeholder: "例如：HackKit", limit: FIELD_LIMITS.short },
+      { name: "projectName", label: "项目名", placeholder: "例如：黑箱", limit: FIELD_LIMITS.short },
       { name: "problem", label: "一句话问题", placeholder: "什么人在什么情况下遇到了什么问题？", multiline: true, limit: FIELD_LIMITS.medium },
       { name: "targetUsers", label: "目标用户", placeholder: "用户是谁？典型使用场景是什么？", multiline: true, limit: FIELD_LIMITS.medium },
       { name: "coreFeatures", label: "核心功能", placeholder: "每行一项，只写真实已完成的功能", multiline: true, limit: FIELD_LIMITS.long },
@@ -217,7 +217,7 @@ export function DocsAssistant() {
       <div className={styles.shell}>
         <header className={styles.hero}>
           <div>
-            <p className={styles.kicker}>HACKKIT / DELIVERY DESK 203</p>
+            <p className={styles.kicker}>黑箱 / DELIVERY DESK 203</p>
             <h1>把项目情况<br />写清楚。</h1>
             <p className={styles.lede}>把已经确认的内容填进来。缺的信息会直接标出来，不会替你编。</p>
           </div>

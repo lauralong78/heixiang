@@ -174,7 +174,7 @@ export function CardEditor() {
           <article className={styles.card} aria-label="组队名片预览">
             <div className={styles.cardTopline}>
               <span>OPEN TO TEAM</span>
-              <b>HACKKIT / 001</b>
+              <b>黑箱 / 001</b>
             </div>
             <div className={styles.identity}>
               <h3 className={!content.name ? styles.placeholder : ""}>

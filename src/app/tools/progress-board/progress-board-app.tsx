@@ -468,5 +468,5 @@ function toLocalDateTime(value: string) {
 }
 
 function safeFilename(value: string) {
-  return value.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 60) || "hackkit";
+  return value.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 60) || "黑箱";
 }

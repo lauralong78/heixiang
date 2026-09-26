@@ -195,7 +195,7 @@ export function IcebreakerWorkspace() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${(activity.activityName.trim() || "hackkit-icebreaker").replace(/[\\/:*?"<>|]/g, "-")}.json`;
+    anchor.download = `${(activity.activityName.trim() || "黑箱-现场破冰").replace(/[\\/:*?"<>|]/g, "-")}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     setNotice("真实活动数据已导出为 JSON。");
@@ -217,7 +217,7 @@ export function IcebreakerWorkspace() {
           <input
             value={activity.activityName}
             onChange={(event) => setActivity((current) => ({ ...current, activityName: event.target.value }))}
-            placeholder="例如：HackKit Demo Night"
+              placeholder="例如：黑箱 Demo Night"
             maxLength={80}
           />
         </label>

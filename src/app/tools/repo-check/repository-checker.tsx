@@ -93,7 +93,7 @@ export function RepositoryChecker() {
           <div>
             <div className="mb-6 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.22em] text-[#b24b2a]">
               <span className="h-2.5 w-2.5 rounded-full bg-[#e55e34] shadow-[0_0_0_5px_rgba(229,94,52,0.15)]" />
-              HackKit / Repo Inspector 01
+              黑箱 / 仓库检查 01
             </div>
             <h1 className="max-w-3xl text-balance font-serif text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-6xl">
               提交前，先看看仓库少了什么。

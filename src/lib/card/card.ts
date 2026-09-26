@@ -196,7 +196,7 @@ export function drawCard(canvas: HTMLCanvasElement, draft: CardDraft) {
   context.fillStyle = "#777087";
   context.font = '600 20px "Microsoft YaHei", "Noto Sans SC", sans-serif';
   context.textAlign = "right";
-  context.fillText("HACKKIT / 001", 1120, 92);
+  context.fillText("黑箱 / 001", 1120, 92);
   context.textAlign = "left";
 
   context.fillStyle = "#faf8ff";
@@ -263,7 +263,7 @@ export async function exportCardPng(draft: CardDraft) {
     .replace(/[\\/:*?"<>|]/g, "-")
     .slice(0, 24);
   anchor.href = url;
-  anchor.download = `${safeName || "hackkit-team-card"}.png`;
+  anchor.download = `${safeName || "黑箱-组队名片"}.png`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();

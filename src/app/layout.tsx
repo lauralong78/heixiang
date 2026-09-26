@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "HackKit | 黑客松微工具箱",
-    template: "%s | HackKit",
+    default: "黑箱｜黑客松现场工具箱",
+    template: "%s | 黑箱",
   },
   description: "面向黑客松现场的独立微工具目录，按需打开，快速完成真实任务。",
 };

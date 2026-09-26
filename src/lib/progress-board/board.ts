@@ -147,7 +147,7 @@ export function assertImportSize(size: number): void {
 export function validateBackup(value: unknown): ProgressBoard {
   const backup = requireRecord(value, "备份文件");
   if (backup.format !== BOARD_FORMAT) {
-    throw new BoardValidationError("这不是 HackKit 进度看板备份文件。");
+    throw new BoardValidationError("这不是黑箱进度看板备份文件。");
   }
   if (backup.version !== BOARD_VERSION) {
     throw new BoardValidationError(`备份版本不兼容：仅支持版本 ${BOARD_VERSION}。`);
