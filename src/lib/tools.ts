@@ -46,18 +46,20 @@ export const tools: HackKitTool[] = [
   {
     slug: "progress-board",
     title: "进度看板",
-    description: "同时展示多支队伍的倒计时与关键进展，方便现场快速掌握节奏。",
+    description: "创建本地活动与多队任务，用倒计时、完成比例和 JSON 备份掌握现场节奏。",
     category: "现场",
-    status: "roadmap",
-    tags: ["倒计时", "看板", "进度"],
+    status: "available",
+    href: "/tools/progress-board",
+    tags: ["倒计时", "看板", "进度", "JSON"],
   },
   {
     slug: "icebreaker",
     title: "现场破冰",
-    description: "按自愿分享的技能与兴趣完成公平配对，并提供有上下文的交流提示。",
+    description: "按自愿分享的技能与兴趣完成本地公平配对，减少重复并解释匹配依据。",
     category: "现场",
-    status: "roadmap",
-    tags: ["破冰", "配对", "交流"],
+    status: "available",
+    href: "/tools/icebreaker",
+    tags: ["破冰", "配对", "公平轮换", "交流"],
   },
   {
     slug: "voting-wall",
@@ -78,10 +80,11 @@ export const tools: HackKitTool[] = [
   {
     slug: "docs-assistant",
     title: "项目文档助手",
-    description: "基于真实项目资料生成 README 或演示提纲草稿，并标出缺失信息。",
+    description: "基于真实项目资料生成 README 与一页说明，标出缺失信息并下载 Markdown。",
     category: "内容",
-    status: "roadmap",
-    tags: ["README", "演示", "草稿"],
+    status: "available",
+    href: "/tools/docs-assistant",
+    tags: ["README", "项目说明", "缺失检查", "Markdown"],
   },
 ];
 

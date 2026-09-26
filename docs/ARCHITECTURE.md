@@ -14,6 +14,9 @@
 | `/tools/card` | 第一阶段 | 组队名片生成与 PNG 导出 |
 | `/tools/repo-check` | 第一阶段 | 公开 GitHub 仓库检查 |
 | `/api/github/check` | 第一阶段 | GitHub 只读代理与规则检查 |
+| `/tools/progress-board` | 第二阶段 | 本地活动倒计时、多队任务进度与 JSON 备份 |
+| `/tools/icebreaker` | 第二阶段 | 本地公平配对、轮空与历史轮次 |
+| `/tools/docs-assistant` | 第二阶段 | README 与一页说明生成、编辑和 Markdown 下载 |
 
 ## API 返回契约
 
@@ -40,5 +43,8 @@ type ApiResult<T> =
 - Card：`src/app/tools/card/**`、`src/lib/card/**`。
 - Repo check：`src/app/tools/repo-check/**`、`src/app/api/github/check/**`、`src/lib/github/**`。
 - AI contract：`src/lib/ai/**`、`.env.example`、对应测试。
+- Progress board：`src/app/tools/progress-board/**`、`src/lib/progress-board/**`。
+- Icebreaker：`src/app/tools/icebreaker/**`、`src/lib/icebreaker/**`。
+- Docs assistant：`src/app/tools/docs-assistant/**`、`src/lib/docs-assistant/**`。
 
 公共文件冲突由总控解决；功能任务不得越界修改其他任务写集。

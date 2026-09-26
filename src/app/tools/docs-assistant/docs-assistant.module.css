@@ -17,7 +17,7 @@
 .shell { width: min(calc(100% - 2rem), 94rem); margin: 0 auto; padding: 3rem 0 6rem; }
 
 .hero { display: grid; grid-template-columns: 1fr 20rem; gap: 3rem; align-items: end; border-bottom: 2px solid var(--ink); padding-bottom: 2.4rem; }
-.backLink { display: inline-block; margin-bottom: 3rem; color: var(--ink); font-family: var(--font-geist-mono), monospace; font-size: .72rem; font-weight: 750; text-decoration: none; }
+.backLink { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 3rem; color: var(--ink); font-family: var(--font-geist-mono), monospace; font-size: .72rem; font-weight: 750; text-decoration: none; }
 .backLink:hover { color: var(--orange); text-decoration: underline; text-underline-offset: .3rem; }
 .kicker, .panelTitle span, .outputHeader span { margin: 0 0 .8rem; color: var(--orange); font-family: var(--font-geist-mono), monospace; font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
 .hero h1 { max-width: 12ch; margin: 0; font-family: Georgia, "Songti SC", serif; font-size: clamp(3.2rem, 7vw, 7.4rem); font-weight: 900; line-height: .88; letter-spacing: -.075em; }
@@ -40,7 +40,7 @@
 .panelTitle, .outputHeader { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--ink); padding: 1.2rem 1.35rem; }
 .panelTitle span, .outputHeader span { display: block; margin-bottom: .35rem; }
 .panelTitle h2, .outputHeader h2 { margin: 0; font-family: Georgia, "Songti SC", serif; font-size: 1.5rem; }
-.dangerButton, .regenerateButton { border: 1px solid var(--ink); padding: .55rem .75rem; color: var(--ink); background: transparent; font-family: var(--font-geist-mono), monospace; font-size: .68rem; font-weight: 750; cursor: pointer; }
+.dangerButton, .regenerateButton { min-height: 44px; border: 1px solid var(--ink); padding: .55rem .75rem; color: var(--ink); background: transparent; font-family: var(--font-geist-mono), monospace; font-size: .68rem; font-weight: 750; cursor: pointer; }
 .dangerButton:hover { color: #fff; background: #9b2c23; }
 
 .fieldset { min-width: 0; margin: 0; border: 0; border-bottom: 1px solid var(--line); padding: 1.5rem 1.35rem 1.7rem; }

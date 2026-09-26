@@ -62,7 +62,7 @@
   text-transform: uppercase;
 }
 
-.backLink { color: var(--pb-ink); text-decoration: none; }
+.backLink { display: inline-flex; align-items: center; min-height: 44px; color: var(--pb-ink); text-decoration: none; }
 .backLink:hover { color: var(--pb-acid); }
 
 .setupShell {
@@ -206,8 +206,9 @@
 .deadlineText { margin: 0; color: var(--pb-muted); font-size: 13px; }
 
 .countdown {
-  border-left: 5px solid var(--pb-acid);
-  padding: 5px 0 6px 28px;
+  border: 1px solid var(--pb-line);
+  padding: 20px 24px;
+  background: rgba(217, 255, 67, 0.035);
 }
 
 .countdown.ended { border-color: var(--pb-orange); }
@@ -264,7 +265,7 @@
 .metricLead strong { display: block; margin-top: 10px; font-family: var(--font-geist-mono), monospace; font-size: clamp(46px, 6vw, 78px); font-weight: 500; line-height: 1; letter-spacing: -0.08em; }
 .metricLead strong small { color: var(--pb-muted); font-size: 18px; letter-spacing: 0; }
 .progressTrack { height: 5px; margin-top: 18px; background: #2b323a; }
-.progressTrack i { display: block; height: 100%; background: var(--pb-acid); transition: width 450ms cubic-bezier(0.16, 1, 0.3, 1); }
+.progressTrack i { display: block; height: 100%; background: var(--pb-acid); transform-origin: left; transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1); }
 .metric { display: flex; flex-direction: column; justify-content: space-between; }
 .metric strong { font-family: var(--font-geist-mono), monospace; font-size: clamp(32px, 4vw, 56px); font-weight: 500; }
 .metric span { color: var(--pb-muted); font-size: 12px; }
@@ -291,7 +292,7 @@
 .teamActions button:hover, .taskActions button:hover { color: var(--pb-acid); }
 
 .teamProgress { position: relative; height: 22px; border-bottom: 1px solid var(--pb-line); background: #0e1318; }
-.teamProgress i { display: block; height: 100%; background: rgba(217, 255, 67, 0.22); transition: width 400ms ease; }
+.teamProgress i { display: block; height: 100%; background: rgba(217, 255, 67, 0.22); transform-origin: left; transition: transform 400ms ease; }
 .teamProgress span { position: absolute; top: 5px; right: 8px; color: #bac1c9; font-family: var(--font-geist-mono), monospace; font-size: 9px; }
 
 .taskList { padding: 10px 20px; }

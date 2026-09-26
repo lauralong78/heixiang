@@ -108,6 +108,7 @@ button, input { font: inherit; }
 .brand-mark {
   display: inline-flex;
   align-items: center;
+  min-height: 2.75rem;
   gap: 0.18rem;
   font-family: var(--font-geist-mono), monospace;
   font-size: 0.84rem;
@@ -118,6 +119,9 @@ button, input { font: inherit; }
 .brand-bracket { color: var(--accent); }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   padding: 0.55rem 0.7rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -250,11 +254,11 @@ button, input { font: inherit; }
   border-bottom: 1px solid var(--line);
   padding-block: 1rem;
   font-weight: 650;
-  transition: color 160ms ease, padding-left 160ms ease;
+  transition: color 160ms ease, transform 160ms ease;
 }
 
 .ready-row:last-child { border-bottom: 0; }
-.ready-row:hover { padding-left: 0.3rem; color: var(--accent-hover); }
+.ready-row:hover { color: var(--accent-hover); transform: translateX(0.3rem); }
 
 .readiness-note {
   border-top: 1px solid var(--line-strong);

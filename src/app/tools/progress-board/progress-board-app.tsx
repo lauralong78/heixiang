@@ -316,7 +316,7 @@ export function ProgressBoardApp() {
         <div className={styles.metricLead}>
           <span>OVERALL PROGRESS</span>
           <strong>{progress.percent}<small>%</small></strong>
-          <div className={styles.progressTrack}><i style={{ width: `${progress.percent}%` }} /></div>
+          <div className={styles.progressTrack}><i style={{ transform: `scaleX(${progress.percent / 100})` }} /></div>
         </div>
         <Metric value={board.teams.length} label="队伍" />
         <Metric value={progress.total} label="总任务" />
@@ -369,7 +369,7 @@ export function ProgressBoardApp() {
                       }}>删除</button>
                     </div>
                   </header>
-                  <div className={styles.teamProgress}><i style={{ width: `${teamProgress.percent}%` }} /><span>{teamProgress.percent}%</span></div>
+                  <div className={styles.teamProgress}><i style={{ transform: `scaleX(${teamProgress.percent / 100})` }} /><span>{teamProgress.percent}%</span></div>
 
                   <div className={styles.taskList}>
                     {team.tasks.length === 0 && <p className={styles.noTasks}>暂无任务，添加一项具体交付物。</p>}

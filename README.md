@@ -2,10 +2,13 @@
 
 HackKit 把黑客松现场零散、高频的小任务做成可以独立打开的微工具。每个已上线工具都有自己的“输入 → 处理 → 结果或导出”闭环，不要求用户先登录或按固定流程操作。
 
-## 第一阶段已完成
+## 当前可用工具
 
 - **组队名片生成器**：填写称呼、角色、技能、兴趣和简介，实时预览并在浏览器本地导出 1200×675 PNG。
 - **GitHub 提交检查器**：输入公开 `github.com/owner/repo`，检查 README 与比赛交付说明，输出 `pass / fail / unknown`、行号证据和建议。
+- **进度看板**：创建本地活动、多支队伍和任务，查看倒计时与完成比例，并导入或导出经过校验的 JSON 备份。
+- **现场破冰**：登记自愿公开的昵称、技能和兴趣，生成减少重复的公平配对、轮空安排与交流提示。
+- **项目文档助手**：根据真实资料生成并编辑 README 与一页说明，检查缺失信息并下载 Markdown。
 - **工具目录**：支持关键词与分类筛选；未接通功能只显示路线图，不提供假入口。
 - **DeepSeek 服务端适配口**：预留受控调用、超时、输入/输出边界和错误归一化；未配置 Key 时不影响基础工具。
 
@@ -41,7 +44,7 @@ DEEPSEEK_MODEL=deepseek-flash
 GITHUB_TOKEN=
 ```
 
-- `DEEPSEEK_API_KEY` 可选；当前两个基础工具不依赖它。
+- `DEEPSEEK_API_KEY` 可选；当前五个可用工具均不依赖它。
 - `GITHUB_TOKEN` 可选，只用于提高公开 GitHub API 的服务端速率限额。
 - 变量都不能改成 `NEXT_PUBLIC_*`，也不能把真实值提交到仓库。
 
@@ -49,6 +52,7 @@ GITHUB_TOKEN=
 
 - Next.js App Router、React、TypeScript、Tailwind CSS。
 - 名片在浏览器通过 Canvas 生成，不上传用户填写内容。
+- 进度看板、现场破冰和文档助手的数据仅保存在当前浏览器；JSON/Markdown 文件由浏览器本地生成。
 - GitHub 检查通过服务端 Route Handler 固定访问 `api.github.com`，不接受任意主机。
 - DeepSeek 使用 OpenAI-compatible `/chat/completions` 接口；模型名、Base URL 和 Key 均从服务端环境读取。
 
@@ -80,4 +84,4 @@ GITHUB_TOKEN=
 
 ## 当前验证边界
 
-第一阶段以本地运行和本地浏览器验收为准。尚未推送远端、公开部署或使用真实 DeepSeek Key；这些不是已完成事实。
+当前阶段以本地运行和本地浏览器验收为准。尚未推送远端、公开部署、完成多账号数据隔离测试或使用真实 DeepSeek Key；这些不是已完成事实。

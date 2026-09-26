@@ -59,7 +59,7 @@
   letter-spacing: 0.08em;
 }
 
-.backLink { color: var(--ink); text-underline-offset: 4px; }
+.backLink { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); text-underline-offset: 4px; }
 
 .hero {
   display: grid;
