@@ -18,7 +18,7 @@
 
 .hero { display: grid; grid-template-columns: 1fr 20rem; gap: 3rem; align-items: end; border-bottom: 2px solid var(--ink); padding-bottom: 2.4rem; }
 .kicker, .panelTitle span, .outputHeader span { margin: 0 0 .8rem; color: var(--orange); font-family: var(--font-geist-mono), monospace; font-size: .68rem; font-weight: 800; letter-spacing: .14em; }
-.hero h1 { max-width: 12ch; margin: 0; font-family: Georgia, "Songti SC", serif; font-size: clamp(3.2rem, 7vw, 7.4rem); font-weight: 900; line-height: .88; letter-spacing: -.075em; }
+.hero h1 { max-width: 11ch; margin: 0; font-family: Georgia, "Songti SC", serif; font-size: clamp(2.75rem, 5vw, 5rem); font-weight: 850; line-height: .98; letter-spacing: -.035em; text-wrap: balance; }
 .lede { max-width: 42rem; margin: 1.8rem 0 0; color: #4c5850; font-size: clamp(1rem, 1.4vw, 1.18rem); line-height: 1.8; }
 .heroMeta { display: grid; border: 1px solid var(--ink); background: var(--sheet); box-shadow: .6rem .6rem 0 #cfd1c9; }
 .heroMeta span { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--line); padding: 1rem; color: var(--muted); font-family: var(--font-geist-mono), monospace; font-size: .68rem; }
@@ -118,7 +118,7 @@
 @media (max-width: 720px) {
   .shell { width: min(calc(100% - 1rem), 94rem); padding: 2rem 0 4rem; }
   .hero { gap: 2rem; }
-  .hero h1 { font-size: clamp(3rem, 16vw, 5rem); }
+  .hero h1 { font-size: clamp(2.4rem, 11vw, 3.8rem); }
   .noticeRow .saveState { width: 100%; margin-left: 0; padding-left: 0; }
   .panelTitle, .outputHeader { align-items: flex-start; }
   .outputHeader { flex-direction: column; }

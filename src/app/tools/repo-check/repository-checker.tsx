@@ -95,7 +95,7 @@ export function RepositoryChecker() {
               <span className="h-2.5 w-2.5 rounded-full bg-[#e55e34] shadow-[0_0_0_5px_rgba(229,94,52,0.15)]" />
               HackKit / Repo Inspector 01
             </div>
-            <h1 className="max-w-3xl font-serif text-5xl font-black leading-[0.96] tracking-[-0.04em] sm:text-7xl">
+            <h1 className="max-w-3xl text-balance font-serif text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-6xl">
               仓库说清楚了吗？
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4d5b54] sm:text-lg">
