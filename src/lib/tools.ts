@@ -20,7 +20,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "card",
     title: "组队名片",
-    description: "填写技能、兴趣、角色与简介，实时预览并导出可分享的 PNG 名片。",
+    description: "填好角色、技能和想做的方向，生成一张可以下载的 PNG 名片。",
     category: "协作",
     status: "available",
     href: "/tools/card",
@@ -29,7 +29,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "repo-check",
     title: "仓库检查器",
-    description: "输入公开 GitHub 仓库，核对提交材料并查看逐项证据与无法确认项。",
+    description: "检查公开 GitHub 仓库的 README 和提交材料，列出证据、缺项和无法确认的内容。",
     category: "交付",
     status: "available",
     href: "/tools/repo-check",
@@ -38,7 +38,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "team-match",
     title: "队友匹配",
-    description: "根据自愿公开的技能与兴趣给出有依据的匹配建议，并管理邀请状态。",
+    description: "根据成员愿意公开的技能和兴趣给出匹配建议，并记录邀请状态。",
     category: "协作",
     status: "roadmap",
     tags: ["匹配", "技能互补", "邀请"],
@@ -46,7 +46,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "progress-board",
     title: "进度看板",
-    description: "创建本地活动与多队任务，用倒计时、完成比例和 JSON 备份掌握现场节奏。",
+    description: "记录活动截止时间、队伍任务和完成进度，可导出或恢复本地 JSON 备份。",
     category: "现场",
     status: "available",
     href: "/tools/progress-board",
@@ -55,7 +55,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "icebreaker",
     title: "现场破冰",
-    description: "按自愿分享的技能与兴趣完成本地公平配对，减少重复并解释匹配依据。",
+    description: "按昵称、技能和兴趣安排轮换配对，尽量减少重复，并说明配对依据。",
     category: "现场",
     status: "available",
     href: "/tools/icebreaker",
@@ -64,7 +64,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "voting-wall",
     title: "观众投票墙",
-    description: "创建投票活动、收集合格投票并展示结果，同时处理重复提交。",
+    description: "创建投票、接收作品并统计结果，同时处理重复提交。",
     category: "现场",
     status: "roadmap",
     tags: ["投票", "作品", "结果"],
@@ -72,7 +72,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "check-in",
     title: "签到与领取",
-    description: "生成可核验凭证，记录签到或资源领取，并提示重复与异常操作。",
+    description: "记录签到或资源领取情况，生成凭证，并提示重复操作。",
     category: "现场",
     status: "roadmap",
     tags: ["签到", "二维码", "资源"],
@@ -80,7 +80,7 @@ export const tools: HackKitTool[] = [
   {
     slug: "docs-assistant",
     title: "项目文档助手",
-    description: "基于真实项目资料生成 README 与一页说明，标出缺失信息并下载 Markdown。",
+    description: "用已经确认的项目资料生成 README 和一页说明，缺的信息会单独列出。",
     category: "内容",
     status: "available",
     href: "/tools/docs-assistant",

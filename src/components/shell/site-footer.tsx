@@ -7,7 +7,7 @@ export function SiteFooter() {
         <div>
           <Link href="/" className="brand-mark focus-ring w-fit">HACKKIT</Link>
           <p className="mt-2 max-w-md text-sm leading-6 text-[var(--text-muted)]">
-            黑客松现场的独立微工具目录。按需打开，不强制登录，也没有固定流程。
+            黑客松现场要用的几个小工具。按需打开，不用登录，也没有固定流程。
           </p>
         </div>
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-[var(--text-faint)]">

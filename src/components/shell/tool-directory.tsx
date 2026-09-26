@@ -72,9 +72,9 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
   return (
     <section id="tools" className="scroll-mt-24 py-16 md:py-24" aria-labelledby="tools-title">
       <div className="mb-8 max-w-2xl">
-        <h2 id="tools-title" className="section-title">选择现在要解决的问题</h2>
+        <h2 id="tools-title" className="section-title">你现在要做什么？</h2>
         <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
-          可用工具可以直接进入。路线图项目仅说明方向，不代表功能已经接通。
+          标着“可用”的可以直接打开；标着“路线图”的还没做完，暂时不能使用。
         </p>
       </div>
 

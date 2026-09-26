@@ -98,9 +98,9 @@ export function CardEditor() {
 
       <section className={styles.intro}>
         <p className={styles.eyebrow}>TEAM SIGNAL / 组队信号</p>
-        <h1>把你的能力，<br />变成一张入场券。</h1>
+        <h1>先让队友知道<br />你会什么。</h1>
         <p className={styles.lede}>
-          填写你会什么、想做什么。右侧名片会实时更新，完成后直接下载 PNG。
+          填上角色、技能和想做的方向，右边会马上生成一张名片。确认没问题后下载 PNG。
         </p>
       </section>
 

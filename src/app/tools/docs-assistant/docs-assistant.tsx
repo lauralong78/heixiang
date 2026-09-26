@@ -218,8 +218,8 @@ export function DocsAssistant() {
         <header className={styles.hero}>
           <div>
             <p className={styles.kicker}>HACKKIT / DELIVERY DESK 203</p>
-            <h1>把真实项目，<br />讲得完整。</h1>
-            <p className={styles.lede}>填写你已知道的事实。空白内容会被标为“待补充”，不会被自动编造。</p>
+            <h1>把项目情况<br />写清楚。</h1>
+            <p className={styles.lede}>把已经确认的内容填进来。缺的信息会直接标出来，不会替你编。</p>
           </div>
           <div className={styles.heroMeta}>
             <span><b>LOCAL</b> 仅在浏览器处理</span>
@@ -244,8 +244,8 @@ export function DocsAssistant() {
           <div className={styles.promptIntro}>
             <div>
               <span className={styles.promptLabel}>HANDOFF / 给你的 AI</span>
-              <h2 id="ai-prompt-title">让 AI 先读项目，再替你整理 README</h2>
-              <p>复制提示词，粘贴给能够访问你项目文件的 AI。它会按这份资料表逐项查证；本站不会读取、上传或发送你的项目。</p>
+              <h2 id="ai-prompt-title">让你常用的 AI 帮忙查项目</h2>
+              <p>复制这段提示词，交给能读取项目目录的 AI。它会先查代码和配置，再按这张表整理 README；本站不会读取你的项目。</p>
             </div>
             <div className={styles.promptActions}>
               <button type="button" onClick={copyAiPrompt}>复制提示词</button>

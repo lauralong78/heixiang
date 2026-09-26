@@ -209,8 +209,8 @@ export function IcebreakerWorkspace() {
 
       <section className={styles.hero}>
         <div>
-          <h1>让下一次对话，<br />不是随机碰运气。</h1>
-          <p>主持人在一台设备上登记公开昵称、技能与兴趣。每轮优先避开旧搭档，再用双方真实填写的标签给出交流切口。</p>
+          <h1>下一轮，<br />和谁聊？</h1>
+          <p>在一台设备上登记昵称、技能和兴趣。系统会尽量避开上一轮搭档，并说明这次为什么这样配。</p>
         </div>
         <label className={styles.eventField}>
           <span>活动名称</span>

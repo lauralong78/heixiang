@@ -8,17 +8,16 @@ export default function Home() {
       <section className="hero-section">
         <div className="shell-container hero-grid">
           <div className="hero-copy">
-            <p className="hero-kicker">黑客松现场微工具</p>
             <h1 className="hero-title">
-              <span>少切换。</span>
-              <span>快解决。</span>
+              <span>黑客松现场，</span>
+              <span>用得到的工具。</span>
             </h1>
             <p className="hero-description">
-              HackKit 把零散的现场任务拆成独立工具。选一个问题，完成一次真实输入与输出。
+              做名片、查仓库、盯进度、现场配对，或者整理 README。每个工具都能单独使用，不用登录，也不用按固定流程走。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="#tools" className="primary-action focus-ring">浏览工具</Link>
-              <Link href="/tools/repo-check" className="secondary-action focus-ring">检查公开仓库</Link>
+              <Link href="#tools" className="primary-action focus-ring">查看全部工具</Link>
+              <Link href="/tools/repo-check" className="secondary-action focus-ring">检查 GitHub 仓库</Link>
             </div>
           </div>
 
@@ -38,7 +37,7 @@ export default function Home() {
                 ))}
             </div>
             <p className="readiness-note">
-              其余 {tools.length - availableToolCount} 项保留为路线图，不提供虚假入口。
+              另外 {tools.length - availableToolCount} 项还在计划中，暂时不能打开。
             </p>
           </aside>
         </div>

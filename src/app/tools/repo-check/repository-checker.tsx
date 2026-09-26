@@ -96,11 +96,11 @@ export function RepositoryChecker() {
               HackKit / Repo Inspector 01
             </div>
             <h1 className="max-w-3xl text-balance font-serif text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-6xl">
-              仓库说清楚了吗？
+              提交前，先看看仓库少了什么。
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4d5b54] sm:text-lg">
-              输入公开 GitHub 仓库。检查器只读取元数据与 README，
-              用行号和原文摘录支撑每个结论。
+              粘贴公开 GitHub 仓库地址。它只读取仓库信息和 README，
+              并把找到的证据、缺项和无法确认的内容分开列出。
             </p>
           </div>
           <div className="border-l-0 border-[#16241d] font-mono text-xs leading-6 text-[#5f6b65] lg:border-l lg:pl-8">
