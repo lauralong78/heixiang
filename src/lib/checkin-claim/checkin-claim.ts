@@ -125,6 +125,7 @@ export function createCheckinState(hostName: string, title: string, mode: Checki
 export async function createRosterEntry(state: CheckinClaimState, activityId: string, actorIdentityId: string, label: string): Promise<{ state: CheckinClaimState; created: CreatedRosterEntry }> {
   const activity = getActivity(state, activityId);
   requireHost(state, activity, actorIdentityId);
+  if (!(["draft", "open", "paused"] as string[]).includes(activity.status)) throw new CheckinValidationError("活动当前已冻结，不能修改名单。", "ACTIVITY_NOT_OPEN");
   if (state.data.roster.filter((item) => item.activityId === activityId).length >= CHECKIN_MAX_ROSTER) throw new CheckinValidationError("单个活动最多 250 名名单成员。", "INVALID_INPUT");
   const clean = normalizeBoundedText(label, "名单名称", LOCAL_LIMITS.identityName);
   const timestamp = nowIso();
@@ -150,7 +151,9 @@ export function closeActivity(state: CheckinClaimState, activityId: string, acto
 
 export async function reissueCredential(state: CheckinClaimState, activityId: string, actorIdentityId: string, rosterEntryId: string): Promise<{ state: CheckinClaimState; credential: string }> {
   const activity = getActivity(state, activityId); requireHost(state, activity, actorIdentityId);
+  if (!(["draft", "open", "paused"] as string[]).includes(activity.status)) throw new CheckinValidationError("活动当前已冻结，不能重发凭证。", "ACTIVITY_NOT_OPEN");
   const entry = getRoster(state, rosterEntryId); if (entry.activityId !== activityId) throw new CheckinValidationError("名单不属于当前活动。", "INVALID_INPUT");
+  if (entry.status !== "active") throw new CheckinValidationError("只有 active 名单成员可以重发凭证。", "ROSTER_INACTIVE");
   const credential = `${cryptoRandom().slice(0, 4).toUpperCase()}-${cryptoRandom().slice(0, 4).toUpperCase()}`;
   const timestamp = nowIso();
   const nextEntry = { ...entry, credentialDigest: await digestCredential(credential), credentialIssuedAt: timestamp, updatedAt: timestamp };
@@ -192,6 +195,7 @@ export function voidRecord(state: CheckinClaimState, activityId: string, actorId
 
 export function setRosterStatus(state: CheckinClaimState, activityId: string, actorIdentityId: string, rosterEntryId: string, status: "withdrawn" | "deleted"): CheckinClaimState {
   const activity = getActivity(state, activityId); requireHost(state, activity, actorIdentityId);
+  if (!(["draft", "open", "paused"] as string[]).includes(activity.status)) throw new CheckinValidationError("活动当前已冻结，不能修改名单状态。", "ACTIVITY_NOT_OPEN");
   const entry = getRoster(state, rosterEntryId); if (entry.activityId !== activityId) throw new CheckinValidationError("名单不属于当前活动。", "INVALID_INPUT");
   const timestamp = nowIso();
   return touch({ ...state, identities: state.identities.map((item) => item.id === entry.identityId && status === "deleted" ? { ...item, displayName: "已匿名成员", status: "deleted", deletedAt: timestamp, updatedAt: timestamp } : item), participants: state.participants.map((item) => item.id === entry.participantId ? { ...item, status, updatedAt: timestamp, withdrawnAt: status === "withdrawn" ? timestamp : item.withdrawnAt, deletedAt: status === "deleted" ? timestamp : item.deletedAt, profile: status === "deleted" ? { ...item.profile, nickname: "已匿名成员", skills: [], interests: [], bio: "" } : item.profile } : item), data: { ...state.data, roster: state.data.roster.map((item) => item.id === entry.id ? { ...item, status, label: status === "deleted" ? "已匿名成员" : "已退出成员", anonymizedAt: timestamp, updatedAt: timestamp } : item) } });
@@ -212,10 +216,21 @@ export function parseBackupText(text: string): CheckinClaimState {
 export function validateState(state: CheckinClaimState): CheckinClaimState {
   if (state.data?.toolVersion !== CHECKIN_TOOL_VERSION || !state.data.modes || !Array.isArray(state.data.roster) || !Array.isArray(state.data.records) || !Array.isArray(state.data.errors)) throw new CheckinValidationError("签到领取数据结构无效。", "INVALID_BACKUP");
   if (state.data.roster.length > CHECKIN_MAX_ROSTER || state.data.records.length > CHECKIN_MAX_RECORDS || state.data.errors.length > CHECKIN_MAX_ERRORS) throw new CheckinValidationError("签到领取数据数量超过限制。", "INVALID_BACKUP");
-  const activityIds = new Set(state.activities.map((item) => item.id)); const rosterIds = new Set<string>();
-  for (const entry of state.data.roster) { if (rosterIds.has(entry.id) || !activityIds.has(entry.activityId) || !state.identities.some((item) => item.id === entry.identityId) || !/^[a-f0-9]{64}$/.test(entry.credentialDigest)) throw new CheckinValidationError("名单数据引用或凭证摘要无效。", "INVALID_BACKUP"); rosterIds.add(entry.id); }
-  for (const activity of state.activities) { if (!state.data.modes[activity.id] || !["check-in", "claim", "check-in-and-claim"].includes(state.data.modes[activity.id])) throw new CheckinValidationError("活动模式无效。", "INVALID_BACKUP"); }
-  for (const record of state.data.records) { if (!rosterIds.has(record.rosterEntryId) || !activityIds.has(record.activityId) || !["check-in", "claim"].includes(record.actionKind) || !["completed", "voided"].includes(record.status)) throw new CheckinValidationError("签到记录结构无效。", "INVALID_BACKUP"); }
+  if (state.tool !== "checkin-claim" || state.format !== LOCAL_CONTRACT_FORMAT || state.version !== LOCAL_CONTRACT_VERSION || state.mode !== LOCAL_DEMO_MODE) throw new CheckinValidationError("签到领取备份头无效。", "INVALID_BACKUP");
+  const activityIds = new Set(state.activities.map((item) => item.id)); const identityIds = new Set(state.identities.map((item) => item.id)); const participantIds = new Set(state.participants.map((item) => item.id)); const rosterIds = new Set<string>(); const recordIds = new Set<string>(); const errorIds = new Set<string>();
+  for (const activity of state.activities) { requireSafeId(activity.id, "活动 ID"); requireIso(activity.createdAt, "活动创建时间"); requireIso(activity.updatedAt, "活动更新时间"); requireText(activity.title, "活动标题", LOCAL_LIMITS.activityTitle); if (!state.data.modes[activity.id] || !["check-in", "claim", "check-in-and-claim"].includes(state.data.modes[activity.id])) throw new CheckinValidationError("活动模式无效。", "INVALID_BACKUP"); }
+  if (Object.keys(state.data.modes).some((activityId) => !activityIds.has(activityId))) throw new CheckinValidationError("活动模式包含悬空引用。", "INVALID_BACKUP");
+  const seenIdentityIds = new Set<string>(); const seenParticipantIds = new Set<string>();
+  for (const identity of state.identities) { requireSafeId(identity.id, "身份 ID"); requireText(identity.displayName, "身份名称", LOCAL_LIMITS.identityName); requireIso(identity.createdAt, "身份创建时间"); requireIso(identity.updatedAt, "身份更新时间"); if (seenIdentityIds.has(identity.id)) throw new CheckinValidationError("身份 ID重复。", "INVALID_BACKUP"); seenIdentityIds.add(identity.id); }
+  for (const participant of state.participants) { requireSafeId(participant.id, "参与者 ID"); if (seenParticipantIds.has(participant.id) || !activityIds.has(participant.activityId) || !identityIds.has(participant.identityId)) throw new CheckinValidationError("参与者存在重复 ID、悬空活动或身份引用。", "INVALID_BACKUP"); if (participant.status === "active" && !identityActive(state, participant.identityId)) throw new CheckinValidationError("active 参与者引用了无效身份。", "INVALID_BACKUP"); seenParticipantIds.add(participant.id); }
+  for (const entry of state.data.roster) {
+    if (Object.prototype.hasOwnProperty.call(entry, "credential") || Object.prototype.hasOwnProperty.call(entry, "rawCredential")) throw new CheckinValidationError("备份不得包含原始凭证。", "INVALID_BACKUP");
+    requireSafeId(entry.id, "名单 ID"); requireSafeId(entry.activityId, "名单活动 ID"); requireSafeId(entry.identityId, "名单身份 ID"); requireSafeId(entry.participantId, "名单参与者 ID"); requireText(entry.label, "名单展示名", LOCAL_LIMITS.identityName); requireIso(entry.credentialIssuedAt, "凭证发放时间"); requireIso(entry.createdAt, "名单创建时间"); requireIso(entry.updatedAt, "名单更新时间"); if (entry.anonymizedAt !== null) requireIso(entry.anonymizedAt, "名单匿名时间"); if (rosterIds.has(entry.id) || !activityIds.has(entry.activityId) || !identityIds.has(entry.identityId) || !participantIds.has(entry.participantId) || !state.participants.some((item) => item.id === entry.participantId && item.activityId === entry.activityId && item.identityId === entry.identityId)) throw new CheckinValidationError("名单数据存在重复 ID 或悬空引用。", "INVALID_BACKUP"); if (!/^[a-f0-9]{64}$/.test(entry.credentialDigest)) throw new CheckinValidationError("凭证摘要格式无效。", "INVALID_BACKUP"); rosterIds.add(entry.id);
+  }
+  const completedKeys = new Set<string>();
+  for (const record of state.data.records) { requireSafeId(record.id, "记录 ID"); requireSafeId(record.recordId, "业务记录 ID"); requireSafeId(record.activityId, "记录活动 ID"); requireSafeId(record.rosterEntryId, "记录名单 ID"); requireSafeId(record.actorIdentityId, "记录操作者 ID"); requireIso(record.recordedAt, "记录时间"); requireText(record.voidReason, "撤销原因", LOCAL_LIMITS.reason, true); const duplicateId = recordIds.has(record.id) || recordIds.has(record.recordId); recordIds.add(record.id); recordIds.add(record.recordId); if (duplicateId || !rosterIds.has(record.rosterEntryId) || !activityIds.has(record.activityId) || !identityIds.has(record.actorIdentityId) || state.data.roster.find((entry) => entry.id === record.rosterEntryId)?.activityId !== record.activityId || !["check-in", "claim"].includes(record.actionKind) || !["completed", "voided"].includes(record.status)) throw new CheckinValidationError("签到记录存在重复 ID、悬空引用或非法枚举。", "INVALID_BACKUP"); if (record.status === "voided" && !record.voidReason) throw new CheckinValidationError("已撤销记录必须包含原因。", "INVALID_BACKUP"); if (record.status === "completed") { const key = `${record.activityId}:${record.rosterEntryId}:${record.actionKind}`; if (completedKeys.has(key)) throw new CheckinValidationError("业务唯一键重复。", "INVALID_BACKUP"); completedKeys.add(key); } }
+  const allowedErrors: ErrorCode[] = ["UNKNOWN_CREDENTIAL", "WRONG_ACTIVITY_CREDENTIAL", "ROSTER_INACTIVE", "ACTIVITY_NOT_OPEN", "ALREADY_RECORDED", "INVALID_INPUT", "NOT_AUTHORIZED", "ACTION_NOT_ALLOWED", "VOID_REQUIRES_REASON"];
+  for (const event of state.data.errors) { requireSafeId(event.id, "异常事件 ID"); requireSafeId(event.activityId, "异常活动 ID"); requireSafeId(event.actorIdentityId, "异常操作者 ID"); requireIso(event.occurredAt, "异常时间"); requireText(event.reason, "异常原因", LOCAL_LIMITS.reason); if (event.rosterEntryId !== null) requireSafeId(event.rosterEntryId, "异常名单 ID"); if (errorIds.has(event.id) || !activityIds.has(event.activityId) || !identityIds.has(event.actorIdentityId) || (event.rosterEntryId !== null && !rosterIds.has(event.rosterEntryId)) || !allowedErrors.includes(event.code)) throw new CheckinValidationError("异常事件存在重复 ID、悬空引用或非法错误码。", "INVALID_BACKUP"); errorIds.add(event.id); }
   const modes: Record<string, CheckinClaimMode> = {};
   for (const activity of state.activities) modes[activity.id] = state.data.modes[activity.id];
   const roster = state.data.roster.map((entry) => ({
@@ -235,6 +250,11 @@ export function validateState(state: CheckinClaimState): CheckinClaimState {
   }));
   return { ...state, data: { toolVersion: CHECKIN_TOOL_VERSION, modes, roster, records, errors } };
 }
+
+function requireSafeId(value: unknown, label: string): string { if (typeof value !== "string" || !/^[A-Za-z0-9._:-]{1,120}$/.test(value)) throw new CheckinValidationError(`${label}格式无效。`, "INVALID_BACKUP"); return value; }
+function requireIso(value: unknown, label: string): string { if (typeof value !== "string" || value.length > 40 || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value) throw new CheckinValidationError(`${label}格式无效。`, "INVALID_BACKUP"); return value; }
+function requireText(value: unknown, label: string, maxLength: number, allowEmpty = false): string { if (typeof value !== "string" || value.length > maxLength || (!allowEmpty && !value.trim())) throw new CheckinValidationError(`${label}无效。`, "INVALID_BACKUP"); return value; }
+function identityActive(state: CheckinClaimState, identityId: string) { return state.identities.some((item) => item.id === identityId && item.status === "active"); }
 export function csvForActivity(state: CheckinClaimState, activityId: string): string {
   const activity = getActivity(state, activityId); const header = ["activityId", "activityTitle", "rosterEntryId", "participantLabel", "actionKind", "status", "recordedAt", "recordId", "voidReason"];
   const rows = state.data.records.filter((item) => item.activityId === activityId).map((record) => { const entry = getRoster(state, record.rosterEntryId); return [activity.id, activity.title, entry.id, entry.label, record.actionKind, record.status, record.recordedAt, record.recordId, record.voidReason]; });

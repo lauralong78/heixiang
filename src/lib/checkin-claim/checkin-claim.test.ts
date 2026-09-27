@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
-  addError, createCheckinState, createRosterEntry, csvForActivity, digestCredential, parseBackupText,
-  recordAction, serializeBackup, setRosterStatus, voidRecord,
+  addError, closeActivity, createCheckinState, createRosterEntry, csvForActivity, digestCredential, parseBackupText,
+  recordAction, reissueCredential, serializeBackup, setRosterStatus, voidRecord,
   type CheckinClaimState,
 } from "./checkin-claim";
 
@@ -30,6 +30,22 @@ test("check-in and claim have independent idempotency keys", async () => {
   const claimed = await recordAction(repeated.state, f.activityId, f.hostId, f.first.credential, "claim");
   assert.equal(claimed.code, "RECORDED");
   assert.equal(claimed.state.data.records.length, 2);
+});
+
+test("participants can submit only their own credential, while viewer-like actors cannot", async () => {
+  const f = await fixture();
+  const participantResult = await recordAction(f.state, f.activityId, f.first.identity.id, f.first.credential, "check-in");
+  assert.equal(participantResult.code, "RECORDED");
+  await assert.rejects(() => recordAction(f.state, f.activityId, f.first.identity.id, f.second.credential, "check-in"), { code: "NOT_AUTHORIZED" });
+  await assert.rejects(() => recordAction(f.state, f.activityId, "viewer", f.first.credential, "check-in"), { code: "NOT_AUTHORIZED" });
+});
+
+test("closed activities freeze roster creation, credential reissue, and roster status changes", async () => {
+  const f = await fixture();
+  const closed = closeActivity(f.state, f.activityId, f.hostId);
+  await assert.rejects(() => createRosterEntry(closed, f.activityId, f.hostId, "关闭后加入"), { code: "ACTIVITY_NOT_OPEN" });
+  await assert.rejects(() => reissueCredential(closed, f.activityId, f.hostId, f.first.entry.id), { code: "ACTIVITY_NOT_OPEN" });
+  assert.throws(() => setRosterStatus(closed, f.activityId, f.hostId, f.first.entry.id, "withdrawn"), { code: "ACTIVITY_NOT_OPEN" });
 });
 
 test("unknown, malformed and inactive credentials become safe errors without raw credential", async () => {
@@ -67,10 +83,21 @@ test("backup round trip works and malformed/oversized data is rejected before wr
   assert.throws(() => parseBackupText("{"), /损坏/);
   assert.throws(() => parseBackupText(`${"x".repeat(512 * 1024)}\n`), /512 KB/);
   const unsafe = JSON.parse(backup) as Record<string, unknown>; (unsafe.data as Record<string, unknown>).roster = [{ ...f.first.entry, credentialDigest: "raw-credential" }];
-  assert.throws(() => parseBackupText(JSON.stringify(unsafe)), /凭证摘要无效/);
+  assert.throws(() => parseBackupText(JSON.stringify(unsafe)), /凭证摘要格式无效/);
   const extra = JSON.parse(backup) as Record<string, unknown>;
   (extra.data as Record<string, unknown>).roster = [{ ...f.first.entry, credential: f.first.credential }];
-  const sanitized = parseBackupText(JSON.stringify(extra));
-  assert.equal("credential" in (sanitized.data.roster[0] as unknown as Record<string, unknown>), false);
-  assert.equal(JSON.stringify(sanitized).includes(f.first.credential), false);
+  assert.throws(() => parseBackupText(JSON.stringify(extra)), /不得包含原始凭证/);
+});
+
+test("deep import validation rejects dangling ids, non-canonical dates, duplicate business keys, and bad error codes", async () => {
+  const f = await fixture();
+  const recorded = await recordAction(f.state, f.activityId, f.hostId, f.first.credential, "check-in");
+  const backup = JSON.parse(serializeBackup(recorded.state)) as Record<string, unknown>;
+  const data = backup.data as Record<string, unknown>;
+  const records = data.records as Array<Record<string, unknown>>;
+  assert.throws(() => parseBackupText(JSON.stringify({ ...backup, data: { ...data, records: [...records, { ...records[0], id: "record-2", recordId: "record-3" }] } })), /业务唯一键重复/);
+  assert.throws(() => parseBackupText(JSON.stringify({ ...backup, data: { ...data, records: [{ ...records[0], recordedAt: "2026-09-27T00:00:00Z" }] } })), /记录时间格式无效/);
+  const errors = data.errors as Array<Record<string, unknown>>;
+  assert.throws(() => parseBackupText(JSON.stringify({ ...backup, data: { ...data, errors: [{ id: "error-1", activityId: "missing", code: "NOPE", occurredAt: "2026-09-27T00:00:00.000Z", actorIdentityId: f.hostId, rosterEntryId: null, reason: "x" }] } })), /异常事件存在重复 ID、悬空引用或非法错误码/);
+  assert.equal(errors.length, 0);
 });
