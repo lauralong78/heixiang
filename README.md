@@ -56,6 +56,7 @@ GITHUB_TOKEN=
 - Next.js App Router、React、TypeScript、Tailwind CSS。
 - 名片在浏览器通过 Canvas 生成，不上传用户填写内容。
 - 进度看板、现场破冰、文档助手、队友匹配、投票墙和签到领取的数据仅保存在当前浏览器；JSON、CSV、Markdown 等文件由浏览器本地生成。
+- 组队名片草稿和最近一次有效的公开 GitHub 仓库地址也会自动保存在当前浏览器。刷新或再次访问同一部署域名可以恢复；更换电脑、浏览器、域名、无痕窗口或清除站点数据后不会自动同步。
 - GitHub 检查通过服务端 Route Handler 固定访问 `api.github.com`，不接受任意主机。
 - DeepSeek 使用 OpenAI-compatible `/chat/completions` 接口；模型名、Base URL 和 Key 均从服务端环境读取。
 

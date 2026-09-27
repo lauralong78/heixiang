@@ -6,6 +6,9 @@ export type CardDraft = {
   bio: string;
 };
 
+export const CARD_STORAGE_KEY = "blackbox.card.draft.v1";
+export const CARD_STORAGE_VERSION = 1;
+
 export const CARD_LIMITS = {
   name: 24,
   role: 32,
@@ -21,6 +24,38 @@ export const EMPTY_CARD: CardDraft = {
   interests: "",
   bio: "",
 };
+
+export function serializeCardDraft(draft: CardDraft): string {
+  return JSON.stringify({ version: CARD_STORAGE_VERSION, draft });
+}
+
+export function parseCardDraft(value: string): CardDraft {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error("名片草稿不是有效 JSON。");
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("名片草稿结构无效。");
+  }
+  const envelope = parsed as { version?: unknown; draft?: unknown };
+  if (envelope.version !== CARD_STORAGE_VERSION || !envelope.draft || typeof envelope.draft !== "object" || Array.isArray(envelope.draft)) {
+    throw new Error("名片草稿版本或结构无效。");
+  }
+
+  const draft = envelope.draft as Record<string, unknown>;
+  const restored = {} as CardDraft;
+  for (const name of Object.keys(CARD_LIMITS) as Array<keyof CardDraft>) {
+    const field = draft[name];
+    if (typeof field !== "string" || field.length > CARD_LIMITS[name]) {
+      throw new Error(`名片草稿字段 ${name} 无效。`);
+    }
+    restored[name] = field;
+  }
+  return restored;
+}
 
 const TAG_SEPARATOR = /[,，、;；\n]+/;
 

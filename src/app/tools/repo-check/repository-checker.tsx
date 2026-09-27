@@ -1,6 +1,12 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+
+import {
+  parseRepositoryDraft,
+  REPOSITORY_DRAFT_STORAGE_KEY,
+  serializeRepositoryDraft,
+} from "@/lib/github/local-draft";
 
 import type {
   ApiResult,
@@ -53,9 +59,40 @@ function formatDate(value: string) {
 
 export function RepositoryChecker() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+  const [draftNotice, setDraftNotice] = useState("");
   const [report, setReport] = useState<RepositoryCheckReport | null>(null);
   const [error, setError] = useState<ErrorState | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem(REPOSITORY_DRAFT_STORAGE_KEY);
+        if (saved) {
+          setRepositoryUrl(parseRepositoryDraft(saved));
+          setDraftNotice("已恢复这台浏览器上次检查的仓库地址。");
+        }
+      } catch {
+        try { window.localStorage.removeItem(REPOSITORY_DRAFT_STORAGE_KEY); } catch { /* storage unavailable */ }
+        setDraftNotice("已有本地地址草稿损坏，已安全清除。");
+      } finally {
+        setHydrated(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const serialized = serializeRepositoryDraft(repositoryUrl);
+      if (serialized) window.localStorage.setItem(REPOSITORY_DRAFT_STORAGE_KEY, serialized);
+      else if (!repositoryUrl.trim()) window.localStorage.removeItem(REPOSITORY_DRAFT_STORAGE_KEY);
+    } catch {
+      queueMicrotask(() => setDraftNotice("浏览器无法保存仓库地址；本次检查仍可继续。"));
+    }
+  }, [repositoryUrl, hydrated]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -138,9 +175,25 @@ export function RepositoryChecker() {
               {pending ? "正在取证…" : "开始检查 →"}
             </button>
           </form>
-          <p className="mt-3 font-mono text-xs text-[#6d7771]">
-            仅接受 https://github.com/owner/repo；不读取私有仓库，不执行仓库内容。
-          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-[#6d7771]">
+            <p>仅接受 https://github.com/owner/repo；有效地址会保存在当前浏览器，不读取私有仓库。</p>
+            {repositoryUrl && (
+              <button
+                type="button"
+                className="underline decoration-[#b24b2a] underline-offset-4 hover:text-[#16241d]"
+                onClick={() => {
+                  setRepositoryUrl("");
+                  setReport(null);
+                  setError(null);
+                  window.localStorage.removeItem(REPOSITORY_DRAFT_STORAGE_KEY);
+                  setDraftNotice("已清除本机保存的仓库地址。");
+                }}
+              >
+                清除已保存地址
+              </button>
+            )}
+          </div>
+          {draftNotice && <p className="mt-2 text-xs text-[#6d7771]" role="status">{draftNotice}</p>}
         </section>
 
         {error && (

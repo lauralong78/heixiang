@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   CARD_LIMITS,
+  CARD_STORAGE_KEY,
   EMPTY_CARD,
   exportCardPng,
   getCardContent,
   hasCardContent,
+  parseCardDraft,
+  serializeCardDraft,
   type CardDraft,
 } from "@/lib/card/card";
 
@@ -57,10 +60,39 @@ const FIELDS: Array<{
 
 export function CardEditor() {
   const [draft, setDraft] = useState<CardDraft>(EMPTY_CARD);
+  const [hydrated, setHydrated] = useState(false);
   const [status, setStatus] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const content = getCardContent(draft);
   const canExport = hasCardContent(draft) && !isExporting;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem(CARD_STORAGE_KEY);
+        if (saved) {
+          setDraft(parseCardDraft(saved));
+          setStatus("已恢复这台浏览器上次保存的名片草稿。");
+        }
+      } catch {
+        try { window.localStorage.removeItem(CARD_STORAGE_KEY); } catch { /* storage unavailable */ }
+        setStatus("已有本地草稿损坏，已改用空白名片。");
+      } finally {
+        setHydrated(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (hasCardContent(draft)) window.localStorage.setItem(CARD_STORAGE_KEY, serializeCardDraft(draft));
+      else window.localStorage.removeItem(CARD_STORAGE_KEY);
+    } catch {
+      queueMicrotask(() => setStatus("浏览器无法保存草稿；请尽快下载 PNG，避免刷新后丢失。"));
+    }
+  }, [draft, hydrated]);
 
   function updateField(name: FieldName, value: string) {
     setDraft((current) => ({ ...current, [name]: value }));
@@ -92,7 +124,7 @@ export function CardEditor() {
       <header className={styles.header}>
         <div className={styles.toolMark}>
           <span className={styles.statusDot} aria-hidden="true" />
-          无需登录 · 本地生成
+          无需登录 · 自动保存本地草稿
         </div>
       </header>
 
@@ -117,6 +149,7 @@ export function CardEditor() {
               onClick={() => {
                 if (!window.confirm("确认清空这张名片的全部内容吗？此操作无法撤销。")) return;
                 setDraft(EMPTY_CARD);
+                window.localStorage.removeItem(CARD_STORAGE_KEY);
                 setStatus("内容已清空。");
               }}
               disabled={!hasCardContent(draft)}
