@@ -43,6 +43,7 @@ export async function GET(request: Request): Promise<Response> {
     });
     const report: RepositoryCheckReport = {
       repository: result.repository,
+      source: result.source,
       checkedAt: new Date().toISOString(),
       ...inspected,
     };

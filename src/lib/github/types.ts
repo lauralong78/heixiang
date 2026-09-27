@@ -16,12 +16,12 @@ export type RepositoryMetadata = {
   url: string;
   homepage: string | null;
   language: string | null;
-  stars: number;
-  forks: number;
-  openIssues: number;
-  defaultBranch: string;
+  stars: number | null;
+  forks: number | null;
+  openIssues: number | null;
+  defaultBranch: string | null;
   license: string | null;
-  updatedAt: string;
+  updatedAt: string | null;
 };
 
 export type CheckEvidence = {
@@ -55,6 +55,7 @@ export type MissingRepositoryCheck = Pick<
 
 export type RepositoryCheckReport = {
   repository: RepositoryMetadata;
+  source: "api" | "public-page";
   checkedAt: string;
   readme: {
     status: CheckStatus;

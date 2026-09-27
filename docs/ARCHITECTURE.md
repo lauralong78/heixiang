@@ -3,7 +3,7 @@
 ## 技术基线
 
 - Next.js App Router、TypeScript、React、Tailwind CSS。
-- 无账号工具优先在浏览器完成；需要密钥或跨域保护的能力进入 Route Handler。
+- 无账号工具优先在浏览器完成；需要密钥或跨域保护的能力进入 Route Handler。GitHub 检查器默认读取 `api.github.com`，匿名 API 限流时可只读降级到同一公开仓库的 `github.com` 页面，且必须明确未确认的字段。
 - 共享类型位于 `src/lib/contracts/`；工具页面位于 `src/app/tools/<slug>/`；工具私有组件位于对应页面目录。
 
 ## 路由

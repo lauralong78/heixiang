@@ -49,7 +49,8 @@ type ErrorState = {
   requestId: string;
 };
 
-function formatDate(value: string) {
+function formatDate(value: string | null) {
+  if (!value) return "未确认";
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "2-digit",
@@ -228,7 +229,7 @@ export function RepositoryChecker() {
                     Public repository
                   </span>
                   <span className="font-mono text-xs text-[#6d7771]">
-                    updated {formatDate(report.repository.updatedAt)}
+                    {report.source === "public-page" ? "PUBLIC PAGE FALLBACK" : `updated ${formatDate(report.repository.updatedAt)}`}
                   </span>
                 </div>
                 <a
@@ -240,7 +241,7 @@ export function RepositoryChecker() {
                   {report.repository.fullName}
                 </a>
                 <p className="mt-3 max-w-3xl leading-7 text-[#59645e]">
-                  {report.repository.description || "仓库未填写描述。"}
+                  {report.repository.description || (report.source === "public-page" ? "GitHub API 被限流；当前仅从公开页面读取可验证信息。" : "仓库未填写描述。")}
                 </p>
               </div>
               <div className="grid grid-cols-3 bg-[#fffdf7] lg:min-w-72">
@@ -374,8 +375,8 @@ export function RepositoryChecker() {
               {[
                 ["主语言", report.repository.language || "未标记"],
                 ["许可证", report.repository.license || "未检测到"],
-                ["默认分支", report.repository.defaultBranch],
-                ["仓库活跃", `★ ${report.repository.stars}  ·  Fork ${report.repository.forks}`],
+                ["默认分支", report.repository.defaultBranch || "未确认"],
+                ["仓库活跃", report.repository.stars === null || report.repository.forks === null ? "公开页面未确认" : `★ ${report.repository.stars}  ·  Fork ${report.repository.forks}`],
               ].map(([label, value]) => (
                 <div key={label} className="bg-[#d7ff64] p-5">
                   <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#536329]">

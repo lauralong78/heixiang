@@ -3,8 +3,10 @@ import "server-only";
 import type { RepositoryMetadata } from "./types";
 
 const GITHUB_API_ORIGIN = "https://api.github.com";
+const GITHUB_WEB_ORIGIN = "https://github.com";
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_README_BYTES = 300_000;
+const MAX_PUBLIC_PAGE_BYTES = 600_000;
 
 export type RepositoryCoordinates = { owner: string; repo: string };
 
@@ -206,7 +208,189 @@ type GitHubRepositoryResponse = {
   private: boolean;
 };
 
-export async function fetchPublicRepository(coordinates: RepositoryCoordinates) {
+type PublicPageRepositoryData = {
+  defaultBranch: string | null;
+  readme: string | null;
+  readmePath: string | null;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function decodeHtmlEntities(value: string): string {
+  const decodeCodePoint = (raw: string, radix: number) => {
+    const codePoint = Number.parseInt(raw, radix);
+    return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+      ? String.fromCodePoint(codePoint)
+      : "";
+  };
+
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => decodeCodePoint(hex, 16))
+    .replace(/&#(\d+);/g, (_, decimal: string) => decodeCodePoint(decimal, 10))
+    .replace(/&(amp|lt|gt|quot|apos);/gi, (_, name: string) => {
+      const entities: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+      return entities[name.toLowerCase()] ?? "";
+    });
+}
+
+function htmlToPlainText(value: string): string {
+  return decodeHtmlEntities(
+    value
+      .replace(/<\/?(?:article|div|p|pre|h[1-6]|li|br|tr|section)[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\r/g, "")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim(),
+  );
+}
+
+function extractPublicPageRepositoryData(page: string): PublicPageRepositoryData {
+  const match = page.match(
+    /<script\s+type="application\/json"\s+data-target="react-app\.embeddedData">([\s\S]*?)<\/script>/i,
+  );
+  if (!match) {
+    throw new GitHubRequestError(
+      "GITHUB_PUBLIC_PAGE_UNAVAILABLE",
+      "GitHub API 被限流，且公开仓库页面没有提供可验证的检查数据。",
+      true,
+      503,
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = JSON.parse(match[1]);
+  } catch {
+    throw new GitHubRequestError(
+      "GITHUB_PUBLIC_PAGE_UNAVAILABLE",
+      "GitHub API 被限流，且公开仓库页面数据格式无法验证。",
+      true,
+      503,
+    );
+  }
+
+  const payload = asRecord(data)?.payload;
+  const layoutRoute = asRecord(asRecord(payload)?.codeViewLayoutRoute);
+  const repo = asRecord(layoutRoute?.repo);
+  if (!repo || repo.public !== true || repo.private !== false) {
+    throw new GitHubRequestError(
+      "REPOSITORY_NOT_FOUND",
+      "仓库不存在、不是公开仓库，或当前无法访问。",
+      false,
+      404,
+    );
+  }
+
+  const repoRoute = asRecord(asRecord(payload)?.codeViewRepoRoute);
+  const overview = asRecord(repoRoute?.overview);
+  const overviewFiles = Array.isArray(overview?.overviewFiles) ? overview.overviewFiles : [];
+  const readme = overviewFiles
+    .map(asRecord)
+    .find((file) => file?.preferredFileType === "readme" && typeof file.richText === "string");
+
+  return {
+    defaultBranch: typeof repo.defaultBranch === "string" ? repo.defaultBranch : null,
+    readme: readme && typeof readme.richText === "string" ? htmlToPlainText(readme.richText) : null,
+    readmePath: readme && typeof readme.path === "string" ? readme.path : null,
+  };
+}
+
+async function fetchPublicRepositoryFromPage(
+  coordinates: RepositoryCoordinates,
+): Promise<{
+  repository: RepositoryMetadata;
+  readme: string | null;
+  readmePath: string | null;
+  truncated: boolean;
+  source: "public-page";
+}> {
+  const { owner, repo } = coordinates;
+  const safeOwner = encodeURIComponent(owner);
+  const safeRepo = encodeURIComponent(repo);
+  let response: Response;
+  try {
+    response = await fetch(`${GITHUB_WEB_ORIGIN}/${safeOwner}/${safeRepo}`, {
+      headers: { Accept: "text/html", "User-Agent": "HackKit-Repository-Checker" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      redirect: "error",
+    });
+  } catch {
+    throw new GitHubRequestError(
+      "GITHUB_PUBLIC_PAGE_UNAVAILABLE",
+      "GitHub API 被限流，且暂时无法读取公开仓库页面。",
+      true,
+      503,
+    );
+  }
+
+  if (response.status === 404) {
+    throw new GitHubRequestError(
+      "REPOSITORY_NOT_FOUND",
+      "仓库不存在、不是公开仓库，或当前无法访问。",
+      false,
+      404,
+    );
+  }
+  if (!response.ok) {
+    throw new GitHubRequestError(
+      "GITHUB_PUBLIC_PAGE_UNAVAILABLE",
+      "GitHub API 被限流，且公开仓库页面暂时无法读取。",
+      true,
+      503,
+    );
+  }
+
+  let page: { text: string; truncated: boolean };
+  try {
+    page = await readBoundedResponseText(response, MAX_PUBLIC_PAGE_BYTES);
+  } catch {
+    throw new GitHubRequestError(
+      "GITHUB_PUBLIC_PAGE_UNAVAILABLE",
+      "GitHub API 被限流，且公开仓库页面读取失败。",
+      true,
+      503,
+    );
+  }
+  if (page.truncated) {
+    throw new GitHubRequestError(
+      "GITHUB_PUBLIC_PAGE_UNAVAILABLE",
+      "GitHub API 被限流，且公开仓库页面过大，无法安全完成检查。",
+      true,
+      503,
+    );
+  }
+
+  const publicData = extractPublicPageRepositoryData(page.text);
+  return {
+    repository: {
+      name: repo,
+      fullName: `${owner}/${repo}`,
+      description: null,
+      url: `${GITHUB_WEB_ORIGIN}/${safeOwner}/${safeRepo}`,
+      homepage: null,
+      language: null,
+      stars: null,
+      forks: null,
+      openIssues: null,
+      defaultBranch: publicData.defaultBranch,
+      license: null,
+      updatedAt: null,
+    },
+    readme: publicData.readme,
+    readmePath: publicData.readmePath,
+    truncated: false,
+    source: "public-page",
+  };
+}
+
+async function fetchPublicRepositoryFromApi(coordinates: RepositoryCoordinates) {
   const { owner, repo } = coordinates;
   const safeOwner = encodeURIComponent(owner);
   const safeRepo = encodeURIComponent(repo);
@@ -259,7 +443,7 @@ export async function fetchPublicRepository(coordinates: RepositoryCoordinates) 
   });
 
   if (readmeResponse.status === 404) {
-    return { repository, readme: null, readmePath: null, truncated: false };
+    return { repository, readme: null, readmePath: null, truncated: false, source: "api" as const };
   }
   if (!readmeResponse.ok) {
     const remaining = readmeResponse.headers.get("x-ratelimit-remaining");
@@ -303,5 +487,17 @@ export async function fetchPublicRepository(coordinates: RepositoryCoordinates) 
     readme,
     readmePath: filenameMatch?.[1] ?? "README",
     truncated,
+    source: "api" as const,
   };
+}
+
+export async function fetchPublicRepository(coordinates: RepositoryCoordinates) {
+  try {
+    return await fetchPublicRepositoryFromApi(coordinates);
+  } catch (error) {
+    if (error instanceof GitHubRequestError && error.code === "GITHUB_RATE_LIMITED") {
+      return fetchPublicRepositoryFromPage(coordinates);
+    }
+    throw error;
+  }
 }
