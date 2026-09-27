@@ -13,9 +13,35 @@
 | HK-202 | 现场破冰对话 | done | HK-190 | `src/app/tools/icebreaker/**`、`src/lib/icebreaker/**` | 公平配对、重复规避、奇数轮空、证据解释与本地历史 |
 | HK-203 | 文档助手对话 | done | HK-190 | `src/app/tools/docs-assistant/**`、`src/lib/docs-assistant/**` | 基于真实输入生成两份 Markdown、缺失清单与下载闭环 |
 | HK-204 | 总控 | done | HK-201..203 | 导航、公共文档、集成测试 | 审查三个提交，接入工具目录并完成浏览器验收 |
-| HK-210 | 总控 | pending | HK-204 | 数据与权限契约 | 为匹配、投票和签到统一认证、数据模型与权限边界 |
-| HK-211 | 队友匹配对话 | pending | HK-210 | 待 HK-210 固化 | 双向邀请、接受/拒绝、退出与删除资料 |
-| HK-212 | 投票墙对话 | pending | HK-210 | 待 HK-210 固化 | 活动创建、作品提交、防重复投票与结果展示 |
-| HK-213 | 签到领取对话 | pending | HK-210 | 待 HK-210 固化 | 可核验凭证、重复提示、记录与 CSV 导出 |
+| HK-210 | 总控 | done | HK-204 | `docs/REQUIREMENTS.md`、`docs/ARCHITECTURE.md`、`docs/TASKS.md`、`PROGRESS.md`、`src/lib/contracts/local-tools.ts`、对应测试 | 固化本机演示身份、活动/参与者模型、权限、状态机、导入导出和三个独立任务写集 |
+| HK-211 | 队友匹配对话 | pending | HK-210 | `src/app/tools/team-match/**`、`src/lib/team-match/**`、对应私有测试 | 同一浏览器切换主持人/参与者，资料可见性、可追溯匹配、双向邀请状态机、退出/删除/恢复和幂等导入导出 |
+| HK-212 | 投票墙对话 | pending | HK-210 | `src/app/tools/vote-wall/**`、`src/lib/vote-wall/**`、对应私有测试 | 活动/作品闭环、资格锁定、同一参与者单票幂等、结果 hidden/live/final、主持人 void/导出和恢复 |
+| HK-213 | 签到领取对话 | pending | HK-210 | `src/app/tools/checkin-claim/**`、`src/lib/checkin-claim/**`、对应私有测试 | 名单/凭证校验、签到与领取分别去重、重复提示、异常记录、CSV 导出、退出/删除和恢复 |
 
 状态只能使用 `pending | in_progress | blocked | done`。任务对话完成时必须提交本地 commit，并回报 commit SHA、验证结果和未解决问题；总控以实际 diff 和测试为准。
+
+## 后续三个任务可直接复制的验收标准
+
+### HK-211 队友匹配
+
+1. 在同一浏览器创建 match 活动，显式切换 host 与两个 participant 身份；刷新后活动、资料、可见性和邀请仍恢复。
+2. `public/limited/private` 的字段可见性真实生效；private 资料不进入匹配建议；建议逐条展示共同兴趣、互补技能、历史相遇/排除关系等证据，不能出现未填写属性。
+3. 覆盖 `pending -> accepted/rejected/withdrawn/expired`；接收方不能替发送方撤回，发送方不能替接收方接受；同一 active pair 重复发送不产生第二条邀请。
+4. 参与者退出后不再出现在新建议，pending 邀请取消，accepted match 变为 ended；删除资料清除展示字段但保留最小审计占位；删除前 JSON 可恢复。
+5. 重复点击、重复 operationId、错误版本/工具/大小/引用和恶意文本均有可见错误且不部分写入；无联系人、无真实消息发送、无跨设备同步。
+
+### HK-212 投票墙
+
+1. host 创建活动、设置 `single-choice`、作品和资格规则，切换 participant 身份投票；刷新和 JSON 往返后仍保持状态。
+2. active participant 才能投票；host 默认不可投票，只有 draft 阶段 `hostEligible` 明确打开才可；规则在 open 后锁定；viewer 不可投票；自投规则按 draft 设置执行。
+3. 每个合资格身份每活动只能有一票；重复点击/重放返回已投提示且票数不变；活动 close 后作品、投票和结果不可变。
+4. `hidden/live/final` 结果展示准确；host 可在 close 前带原因 void 投票，结果中区分有效/void；退出/删除后的历史票按契约保留并匿名化。
+5. 不接受脚本/危险链接/超限导入，不导出凭证或密钥；导出明确标注本机演示和统计时间。
+
+### HK-213 签到领取
+
+1. host 创建 `check-in`、`claim` 或 `check-in-and-claim` 活动，建立名单并为每人核发可验证本地凭证；切换 participant 身份或输入凭证完成真实记录。
+2. `(activityId, rosterEntryId, actionKind)` 各成功一次；重复提交只显示原记录时间和 `ALREADY_RECORDED`，不产生第二行；签到和领取在组合模式下彼此独立。
+3. 覆盖未知/跨活动/已退出/未开放/格式错误/重复等异常记录；原始凭证不进日志和 CSV；host void 必须带原因且可审计。
+4. 退出/删除后禁止新记录但保留已完成记录；CSV 列、UTF-8、公式前缀、逗号换行转义正确；刷新、导入导出和非法备份均可验证。
+5. 页面明确本机演示边界，不宣称二维码安全、账号认证、跨设备共享或线上核验。
