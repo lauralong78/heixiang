@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { LOCAL_DEMO_MODE, type ActivityParticipant, type LocalActivity, type LocalCommandMeta, type LocalIdentity } from "@/lib/contracts/local-tools";
-import { addArtwork, assertImportSize, castVote, closeActivity, createEmptyData, createSettings, eligibility, makeEnvelope, parseBackupText, resultFor, validateHttpsUrl, validateSnapshot, voidVote, type VoteWallSnapshot } from "./vote-wall";
+import { addArtwork, assertCanManageIdentities, assertImportSize, castVote, closeActivity, createEmptyData, createSettings, eligibility, makeEnvelope, parseBackupText, resultFor, validateHttpsUrl, validateSnapshot, voidVote, type VoteWallSnapshot } from "./vote-wall";
 
 const time = "2026-09-27T00:00:00.000Z";
 const identity = (id: string, name = id): LocalIdentity => ({ id, displayName: name, status: "active", createdAt: time, updatedAt: time, deletedAt: null });
@@ -20,6 +20,14 @@ test("资格规则覆盖 host、viewer、自投和规则锁定边界", () => {
   current = { ...current, data: { ...current.data, settings: [{ ...settings, hostEligible: true, allowSelfVote: true }] }, activities: [{ ...current.activities[0], status: "open" }] };
   assert.equal(eligibility(current.activities[0], "host", current.participants, current.data.settings[0], artwork).ok, true);
   assert.equal(eligibility(current.activities[0], "alice", current.participants, current.data.settings[0], artwork).ok, true);
+  const paused = { ...current.activities[0], status: "paused" as const };
+  assert.deepEqual(eligibility(paused, "alice", current.participants, current.data.settings[0], artwork), { ok: false, code: "ACTIVITY_PAUSED", message: "活动已暂停，暂不接受新的投票。" });
+});
+
+test("身份管理入口只允许 host", () => {
+  const current = base();
+  assert.doesNotThrow(() => assertCanManageIdentities(current, "activity-1", "host"));
+  assert.throws(() => assertCanManageIdentities(current, "activity-1", "alice"), /只有主持人/);
 });
 
 test("单票唯一、重复 operationId 幂等且参数冲突拒绝", () => {
@@ -42,7 +50,7 @@ test("void 保留审计且不再允许无痕重投", () => {
 
 test("hidden/live/final 结果模式与 close 冻结", () => {
   let current = withArtwork({ ...base("open"), data: { ...base("open").data, settings: [{ ...createSettings("activity-1"), resultMode: "hidden" }] } }); const artworkId = current.data.artworks[0].id;
-  current = castVote(current, "activity-1", artworkId, meta("alice"), time).snapshot; assert.equal(resultFor(current, "activity-1", artworkId).count, null);
+  current = castVote(current, "activity-1", artworkId, meta("alice"), time).snapshot; assert.equal(resultFor(current, "activity-1", artworkId).count, null); assert.equal(resultFor(current, "activity-1", artworkId).voidCount, null); assert.equal(resultFor(current, "activity-1", artworkId, "alice").recordedForViewer, true); assert.equal(resultFor(current, "activity-1", artworkId, "viewer").recordedForViewer, false);
   current = { ...current, data: { ...current.data, settings: [{ ...current.data.settings[0], resultMode: "live" }] } }; assert.equal(resultFor(current, "activity-1", artworkId).count, 1);
   current = { ...current, data: { ...current.data, settings: [{ ...current.data.settings[0], resultMode: "final" }] } }; assert.equal(resultFor(current, "activity-1", artworkId).count, null);
   current = closeActivity(current, "activity-1", "结束", meta("host"), time); assert.equal(resultFor(current, "activity-1", artworkId).count, 1); assert.throws(() => castVote(current, "activity-1", artworkId, meta("viewer", "after")), /关闭/);

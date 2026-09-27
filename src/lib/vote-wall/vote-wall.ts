@@ -31,7 +31,7 @@ export type ResultMode = "hidden" | "live" | "final";
 export type ArtworkStatus = "published" | "withdrawn" | "removed";
 export type VoteStatus = "active" | "voided";
 export type VoteErrorCode =
-  | "ACTIVITY_NOT_OPEN" | "NOT_ELIGIBLE" | "VIEWER_CANNOT_VOTE" | "HOST_NOT_ELIGIBLE"
+  | "ACTIVITY_NOT_OPEN" | "ACTIVITY_PAUSED" | "NOT_ELIGIBLE" | "VIEWER_CANNOT_VOTE" | "HOST_NOT_ELIGIBLE"
   | "SELF_VOTE_NOT_ALLOWED" | "ARTWORK_NOT_AVAILABLE" | "ALREADY_VOTED" | "CLOSED_FROZEN"
   | "NOT_HOST" | "VOTE_NOT_FOUND" | "INVALID_REASON";
 
@@ -174,7 +174,7 @@ export function addArtwork(data: VoteWallData, input: Omit<VoteWallArtwork, "id"
 }
 
 export function eligibility(activity: LocalActivity, actorId: string, participants: readonly ActivityParticipant[], settings: VoteWallSettings, artwork: VoteWallArtwork): { ok: true } | { ok: false; code: VoteErrorCode; message: string } {
-  if (activity.status !== "open" && activity.status !== "paused") return { ok: false, code: activity.status === "closed" ? "CLOSED_FROZEN" : "ACTIVITY_NOT_OPEN", message: "活动尚未开放投票或已经关闭。" };
+  if (activity.status !== "open") return { ok: false, code: activity.status === "paused" ? "ACTIVITY_PAUSED" : activity.status === "closed" ? "CLOSED_FROZEN" : "ACTIVITY_NOT_OPEN", message: activity.status === "paused" ? "活动已暂停，暂不接受新的投票。" : "活动尚未开放投票或已经关闭。" };
   if (artwork.status !== "published") return { ok: false, code: "ARTWORK_NOT_AVAILABLE", message: "该作品当前不可投票。" };
   const role = resolveActivityRole(actorId, activity, participants);
   if (role === "viewer") return { ok: false, code: "VIEWER_CANNOT_VOTE", message: "观察者只能查看，不能投票。" };
@@ -182,6 +182,11 @@ export function eligibility(activity: LocalActivity, actorId: string, participan
   if (!role || (role !== "host" && role !== "participant")) return { ok: false, code: "NOT_ELIGIBLE", message: "只有活动内 active 合资格身份可以投票。" };
   if (artwork.submitterIdentityId === actorId && !settings.allowSelfVote) return { ok: false, code: "SELF_VOTE_NOT_ALLOWED", message: "当前规则不允许给自己的作品投票。" };
   return { ok: true };
+}
+
+export function assertCanManageIdentities(snapshot: VoteWallSnapshot, activityId: string, actorIdentityId: string): void {
+  const activity = requireActivity(snapshot, activityId);
+  if (activity.ownerIdentityId !== actorIdentityId) throw new VoteWallCommandError("NOT_HOST", "只有主持人可以添加或管理活动身份。");
 }
 
 export function castVote(snapshot: VoteWallSnapshot, activityId: string, artworkId: string, meta: LocalCommandMeta, now = new Date().toISOString()): { snapshot: VoteWallSnapshot; result: VoteResult } {
@@ -235,14 +240,14 @@ export function closeActivity(snapshot: VoteWallSnapshot, activityId: string, re
   return { ...next, data: { ...next.data, operations: [...next.data.operations, { activityId, operationId: meta.operationId, fingerprint, code: "CLOSED", result: { ok: true }, recordedAt: now }] } };
 }
 
-export function resultFor(snapshot: VoteWallSnapshot, activityId: string, artworkId: string): { mode: ResultMode; recorded: boolean; count: number | null; voidCount: number } {
+export function resultFor(snapshot: VoteWallSnapshot, activityId: string, artworkId: string, viewerIdentityId?: string): { mode: ResultMode; recordedForViewer: boolean; count: number | null; voidCount: number | null } {
   const settings = requireSettings(snapshot.data, activityId);
   const activity = requireActivity(snapshot, activityId);
   const votes = snapshot.data.votes.filter((vote) => vote.activityId === activityId && vote.artworkId === artworkId);
   const voidCount = votes.filter((vote) => vote.status === "voided").length;
   const mode = settings.resultMode;
   const visible = mode === "live" || (mode === "final" && activity.status === "closed");
-  return { mode, recorded: votes.length > 0, count: visible ? votes.filter((vote) => vote.status === "active").length : null, voidCount };
+  return { mode, recordedForViewer: Boolean(viewerIdentityId && votes.some((vote) => vote.voterIdentityId === viewerIdentityId)), count: visible ? votes.filter((vote) => vote.status === "active").length : null, voidCount: visible ? voidCount : null };
 }
 
 function recordOperation(snapshot: VoteWallSnapshot, activityId: string, meta: LocalCommandMeta, fingerprint: string, result: unknown, now: string): { snapshot: VoteWallSnapshot; result: VoteResult } {
