@@ -74,7 +74,7 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
       <div className="mb-8 max-w-2xl">
         <h2 id="tools-title" className="section-title">你现在要做什么？</h2>
         <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
-          标着“可用”的可以直接打开；标着“路线图”的还没做完，暂时不能使用。
+          选一个直接打开。队友匹配、投票墙和签到领取采用同一浏览器本机身份切换，不等同于线上账号或跨设备协作。
         </p>
       </div>
 

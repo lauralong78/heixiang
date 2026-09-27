@@ -17,6 +17,9 @@
 | `/tools/progress-board` | 第二阶段 | 本地活动倒计时、多队任务进度与 JSON 备份 |
 | `/tools/icebreaker` | 第二阶段 | 本地公平配对、轮空与历史轮次 |
 | `/tools/docs-assistant` | 第二阶段 | README 与一页说明生成、编辑和 Markdown 下载 |
+| `/tools/team-match` | 第三阶段 | 本机身份切换、可解释匹配与邀请状态 |
+| `/tools/vote-wall` | 第三阶段 | 本机单选投票、结果模式与 void 审计 |
+| `/tools/checkin-claim` | 第三阶段 | 本地凭证签到/领取、异常记录与 CSV 导出 |
 
 ## API 返回契约
 
@@ -67,7 +70,7 @@ type ApiResult<T> =
 - 每个工具的导入先检查文件大小、JSON、共享 envelope、工具版本和业务 payload，再一次性替换本地快照；失败不得部分写入。导出/恢复都应提供结果提示，不能把“JSON.parse 成功”当作业务恢复成功。
 - same-browser-demo 的身份切换是显式 UI 状态；所有写命令接收 actor identity，而不是从页面按钮或 URL 推断。刷新恢复只证明当前浏览器 localStorage 可恢复，不证明多设备或多人同步。
 
-### 后续独立任务 write set
+### 第三阶段独立任务 write set
 
 | 任务 | 页面与私有库（只允许修改） | 明确禁止 | 集成 owner |
 | --- | --- | --- | --- |
@@ -77,7 +80,7 @@ type ApiResult<T> =
 
 三个任务可以并行，彼此没有共享可写文件；各自的单测放在私有 `src/lib/<tool>/*.test.ts`。若发现公共契约不足，任务必须停在说明/回报，不得自行扩张 write set；由总控另开契约变更。
 
-### 后续工具禁止添加的能力
+### 第三阶段工具禁止添加的能力
 
 第三阶段不添加数据库、API route、Server Action、真实登录、跨设备同步、邮件/短信邀请、真实 QR 安全凭证、线上部署或远程推送。若未来引入服务端，必须新增服务端认证、授权、并发唯一约束、审计和 CSRF/速率限制设计，不能把本机 demo 的 role 字段直接当安全边界。
 

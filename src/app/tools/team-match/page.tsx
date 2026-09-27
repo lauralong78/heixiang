@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { TeamMatchWorkspace } from "./team-match-workspace";
 
 export const metadata: Metadata = {
-  title: "队友匹配 · 黑箱",
+  title: "队友匹配",
   description: "在同一浏览器内用自愿填写的资料生成可追溯队友建议。",
 };
 

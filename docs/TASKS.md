@@ -14,13 +14,14 @@
 | HK-203 | 文档助手对话 | done | HK-190 | `src/app/tools/docs-assistant/**`、`src/lib/docs-assistant/**` | 基于真实输入生成两份 Markdown、缺失清单与下载闭环 |
 | HK-204 | 总控 | done | HK-201..203 | 导航、公共文档、集成测试 | 审查三个提交，接入工具目录并完成浏览器验收 |
 | HK-210 | 总控 | done | HK-204 | `docs/REQUIREMENTS.md`、`docs/ARCHITECTURE.md`、`docs/TASKS.md`、`PROGRESS.md`、`src/lib/contracts/local-tools.ts`、对应测试 | 固化本机演示身份、活动/参与者模型、权限、状态机、导入导出和三个独立任务写集 |
-| HK-211 | 队友匹配对话 | pending | HK-210 | `src/app/tools/team-match/**`、`src/lib/team-match/**`、对应私有测试 | 同一浏览器切换主持人/参与者，资料可见性、可追溯匹配、双向邀请状态机、退出/删除/恢复和幂等导入导出 |
-| HK-212 | 投票墙对话 | pending | HK-210 | `src/app/tools/vote-wall/**`、`src/lib/vote-wall/**`、对应私有测试 | 活动/作品闭环、资格锁定、同一参与者单票幂等、结果 hidden/live/final、主持人 void/导出和恢复 |
-| HK-213 | 签到领取对话 | pending | HK-210 | `src/app/tools/checkin-claim/**`、`src/lib/checkin-claim/**`、对应私有测试 | 名单/凭证校验、签到与领取分别去重、重复提示、异常记录、CSV 导出、退出/删除和恢复 |
+| HK-211 | 队友匹配对话 | done | HK-210 | `src/app/tools/team-match/**`、`src/lib/team-match/**`、对应私有测试 | 同一浏览器切换主持人/参与者，资料可见性、可追溯匹配、双向邀请状态机、退出/删除/恢复和幂等导入导出 |
+| HK-212 | 投票墙对话 | done | HK-210 | `src/app/tools/vote-wall/**`、`src/lib/vote-wall/**`、对应私有测试 | 活动/作品闭环、资格锁定、同一参与者单票幂等、结果 hidden/live/final、主持人 void/导出和恢复 |
+| HK-213 | 签到领取对话 | done | HK-210 | `src/app/tools/checkin-claim/**`、`src/lib/checkin-claim/**`、对应私有测试 | 名单/凭证校验、签到与领取分别去重、重复提示、异常记录、CSV 导出、退出/删除和恢复 |
+| HK-214 | 总控 | done | HK-211..213 | 首页、工具目录、公共文档与全量验证 | 审查三个提交及修复，接入目录并完成桌面/窄屏浏览器验收 |
 
 状态只能使用 `pending | in_progress | blocked | done`。任务对话完成时必须提交本地 commit，并回报 commit SHA、验证结果和未解决问题；总控以实际 diff 和测试为准。
 
-## 后续三个任务可直接复制的验收标准
+## 第三阶段三个任务验收标准
 
 ### HK-211 队友匹配
 

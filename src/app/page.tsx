@@ -13,7 +13,7 @@ export default function Home() {
               <span>现场工具。</span>
             </h1>
             <p className="hero-description">
-              做名片、查仓库、盯进度、现场配对，或者整理 README。每个工具都能单独使用，不用登录，也不用按固定流程走。
+              做名片、找队友、查仓库、盯进度、投票签到，或者整理 README。每个工具都能单独使用，不用登录，也不用按固定流程走。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="#tools" className="primary-action focus-ring">查看全部工具</Link>
@@ -37,7 +37,9 @@ export default function Home() {
                 ))}
             </div>
             <p className="readiness-note">
-              另外 {tools.length - availableToolCount} 项还在计划中，暂时不能打开。
+              {availableToolCount === tools.length
+                ? `全部 ${tools.length} 个工具都可以打开；涉及多人身份的功能为同一浏览器本机演示。`
+                : `另外 ${tools.length - availableToolCount} 项还在计划中，暂时不能打开。`}
             </p>
           </aside>
         </div>

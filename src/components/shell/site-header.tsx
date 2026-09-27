@@ -12,7 +12,7 @@ export function SiteHeader() {
 
         <nav aria-label="主导航" className="flex items-center gap-1 sm:gap-3">
           <Link href="/#tools" className="nav-link focus-ring">工具目录</Link>
-          <span className="header-state" aria-label="当前阶段">第一阶段</span>
+          <span className="header-state" aria-label="当前版本">本地版</span>
         </nav>
       </div>
     </header>
