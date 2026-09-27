@@ -101,3 +101,12 @@ test("deep import validation rejects dangling ids, non-canonical dates, duplicat
   assert.throws(() => parseBackupText(JSON.stringify({ ...backup, data: { ...data, errors: [{ id: "error-1", activityId: "missing", code: "NOPE", occurredAt: "2026-09-27T00:00:00.000Z", actorIdentityId: f.hostId, rosterEntryId: null, reason: "x" }] } })), /异常事件存在重复 ID、悬空引用或非法错误码/);
   assert.equal(errors.length, 0);
 });
+
+test("deep import validation rejects invalid roster status and duplicate credential digests", async () => {
+  const f = await fixture();
+  const backup = JSON.parse(serializeBackup(f.state)) as Record<string, unknown>;
+  const data = backup.data as Record<string, unknown>;
+  const roster = data.roster as Array<Record<string, unknown>>;
+  assert.throws(() => parseBackupText(JSON.stringify({ ...backup, data: { ...data, roster: [{ ...roster[0], status: "mystery" }] } })), /名单状态枚举无效/);
+  assert.throws(() => parseBackupText(JSON.stringify({ ...backup, data: { ...data, roster: [{ ...roster[0] }, { ...roster[1], credentialDigest: roster[0].credentialDigest }] } })), /凭证摘要不能重复/);
+});
