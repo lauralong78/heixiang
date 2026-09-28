@@ -46,7 +46,8 @@ export async function supabaseRestRequest<T>(
   init: RequestInit = {},
   env: ServerEnvironment = process.env,
 ): Promise<T> {
-  if (!/^[a-z][a-z0-9_]{0,62}$/.test(table) && !/^rpc\/formal_[a-z0-9_]{1,60}$/.test(table)) {
+  const resourcePath = table.split("?", 1)[0];
+  if (!/^[a-z][a-z0-9_]{0,62}$/.test(resourcePath) && !/^rpc\/formal_[a-z0-9_]{1,60}$/.test(resourcePath)) {
     throw new Error("Invalid Supabase table name.");
   }
 

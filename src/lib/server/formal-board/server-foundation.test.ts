@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 import { digestSessionToken, createSessionToken, FORMAL_BOARD_SESSION_COOKIE } from "./session";
-import { getSupabaseRestConfig } from "./supabase-rest";
+import { getSupabaseRestConfig, supabaseRestRequest } from "./supabase-rest";
 import { hashPassword, verifyPassword } from "./password";
 
 describe("formal board server foundation", () => {
@@ -21,6 +21,22 @@ describe("formal board server foundation", () => {
     });
     assert.equal(config.url, "https://example.supabase.co");
     assert.equal(config.serverKey, "server-only-value");
+  });
+
+  it("allows PostgREST query parameters without treating them as part of a table name", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      assert.equal(String(input), "https://example.supabase.co/rest/v1/app_users?select=id&limit=1");
+      return new Response("[]", { status: 200, headers: { "content-type": "application/json" } });
+    };
+    try {
+      await supabaseRestRequest("app_users?select=id&limit=1", {}, {
+        SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SECRET_KEY: "server-only-value",
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("hashes and verifies passwords with a memory-hard hash", async () => {
