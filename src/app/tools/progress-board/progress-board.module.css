@@ -56,7 +56,6 @@
 .setupShell { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.72fr); align-items: end; gap: clamp(36px, 8vw, 150px); min-height: min(650px, calc(100vh - 210px)); }
 .setupIntro h1, .eventBlock h1, .sectionHeading h2 { overflow-wrap: normal; word-break: keep-all; text-wrap: balance; font-weight: 900; letter-spacing: -0.075em; }
 .setupIntro h1 { max-width: 760px; margin: 20px 0 26px; font-size: clamp(48px, 6.2vw, 82px); line-height: 1.02; }
-.setupIntro h1::first-line { text-decoration: underline; text-decoration-thickness: 5px; text-underline-offset: 8px; }
 .setupIntro > p:last-child { max-width: 600px; color: var(--pb-muted); font-size: clamp(15px, 1.4vw, 19px); line-height: 1.75; }
 
 .setupForm { border: 3px solid var(--pb-ink); border-radius: 16px; padding: 30px; background: var(--pb-blue); box-shadow: var(--pb-shadow); transform: rotate(1.2deg); }
@@ -78,10 +77,10 @@
 .visuallyHidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .message { min-height: 18px; margin: 18px 0 0; color: var(--pb-red); font-size: 12px; font-weight: 700; line-height: 1.5; }
 
-.authMode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: -8px 0 24px; padding: 5px; border: 3px solid var(--pb-ink); border-radius: 9px; background: rgba(255, 255, 255, 0.35); }
+.authMode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 4px 0 24px; padding: 5px; border: 3px solid var(--pb-ink); border-radius: 9px; background: rgba(255, 255, 255, 0.35); }
 .authMode button { min-height: 38px; border: 0; box-shadow: none; background: transparent; }
 .authMode button:hover, .authModeActive { background: var(--pb-yellow) !important; box-shadow: 2px 2px 0 var(--pb-ink) !important; }
-.authHint { margin: 16px 0 0; color: var(--pb-muted); font-size: 11px; line-height: 1.6; }
+.authHint { max-width: 31em; margin: 16px 0 0; color: var(--pb-muted); font-size: 11px; line-height: 1.7; }
 .authStatus { display: grid; gap: 12px; }
 .authStatus strong { font-size: clamp(24px, 3vw, 38px); letter-spacing: -0.06em; line-height: 1; }
 .authStatus p { margin: 0; color: var(--pb-muted); font-size: 13px; line-height: 1.7; }

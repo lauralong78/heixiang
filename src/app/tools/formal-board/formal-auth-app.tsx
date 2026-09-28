@@ -10,7 +10,10 @@ type PublicUser = { id: string; loginId: string; status: string; createdAt: stri
 function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
     const error = (payload as { error?: { message?: unknown } }).error;
-    if (typeof error?.message === "string") return error.message;
+    if (typeof error?.message === "string") {
+      if (error.message.includes("暂时不可用")) return "服务端暂时无法连接数据库，请检查本地网络后重试。";
+      return error.message;
+    }
   }
   return fallback;
 }
