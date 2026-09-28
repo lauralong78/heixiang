@@ -256,6 +256,12 @@ export function FormalAuthApp() {
     } catch { setTaskMessage("网络连接失败，任务状态未确认。"); }
   }
 
+  const selectedActivity = activities.find((activity) => activity.id === selectedActivityId);
+  const totalTaskCount = teams.reduce((sum, team) => sum + team.task_count, 0);
+  const completedTaskCount = tasks.filter((task) => task.status === "done").length;
+  const activeTaskCount = tasks.filter((task) => task.status === "doing").length;
+  const selectedTeamProgress = tasks.length ? Math.round(tasks.reduce((sum, task) => sum + task.progress, 0) / tasks.length) : 0;
+
   return (
     <main className={styles.page}>
       <div className={styles.scanline} aria-hidden="true" />
@@ -271,35 +277,64 @@ export function FormalAuthApp() {
           <p className={styles.authHint}>第一阶段仅支持桌面浏览器。账号使用自选唯一 ID 和密码，密码不会出现在页面响应里。</p>
         </div>
 
-        <div className={styles.setupForm}>
+        <div className={user ? styles.dashboardShell : styles.setupForm}>
           {user ? (
             <div className={styles.authStatus}>
-              <span className={styles.formIndex}>01 / SESSION ACTIVE</span>
-              <strong>欢迎回来，{user.loginId}</strong>
-              <p>你的正式版登录状态已由服务器确认。现在可以创建第一个共享活动。</p>
-              <form className={styles.activityForm} onSubmit={createActivity}>
-                <label>
-                  活动名称
-                  <input value={activityTitle} onChange={(event) => setActivityTitle(event.target.value)} placeholder="例如：周末黑客松" required />
-                </label>
-                <label>
-                  活动说明（可选）
-                  <textarea value={activityDescription} onChange={(event) => setActivityDescription(event.target.value)} placeholder="给队友看的简短说明" rows={3} />
-                </label>
-                <button className={styles.primaryButton} type="submit" disabled={busy}>
-                  <span>创建活动</span><b>↗</b>
-                </button>
-              </form>
-              <p className={styles.message} role="status" aria-live="polite">{activityMessage}</p>
-              <div className={styles.activityList}>
-                <span className={styles.formIndex}>02 / YOUR ACTIVITIES</span>
-                {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
-                  <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
-                    <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
-                    <small>{activity.description || "暂无说明"}</small>
-                  </button>
-                ))}
+              <div className={styles.dashboardHead}>
+                <div>
+                  <span className={styles.formIndex}>LIVE EVENT / 现场进度</span>
+                  <h2>{selectedActivity?.title || "选择一个活动"}</h2>
+                  <p>{selectedActivity ? (selectedActivity.description || "正式版活动正在服务器上同步。") : `欢迎回来，${user.loginId}。先创建或选择一个活动。`}</p>
+                </div>
+                <div className={styles.dashboardStatus}>
+                  <span>SERVER SESSION</span>
+                  <strong>{selectedActivity?.status || "READY"}</strong>
+                  <small>{selectedActivity ? "跨设备数据已连接" : "等待选择活动"}</small>
+                </div>
               </div>
+              <div className={styles.dashboardActions}>
+                <button type="button" onClick={() => document.getElementById("formal-activity-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}>创建活动</button>
+                <button type="button" onClick={() => window.location.reload()}>刷新数据</button>
+                <button type="button" className={styles.dashboardDanger} onClick={logout} disabled={busy}>退出登录</button>
+              </div>
+              <div className={styles.metrics} aria-label="活动统计">
+                <div className={styles.metricLead}>
+                  <span>{selectedTeamId ? "SELECTED TEAM PROGRESS" : "ACTIVITY PROGRESS"}</span>
+                  <strong>{selectedTeamId ? selectedTeamProgress : "—"}<small>{selectedTeamId ? "%" : ""}</small></strong>
+                  <div className={styles.progressTrack}><i style={{ transform: `scaleX(${(selectedTeamId ? selectedTeamProgress : 0) / 100})` }} /></div>
+                </div>
+                <div className={styles.metric}><strong>{teams.length}</strong><span>队伍</span></div>
+                <div className={styles.metric}><strong>{totalTaskCount}</strong><span>总任务</span></div>
+                <div className={styles.metric}><strong>{activeTaskCount}</strong><span>{selectedTeamId ? "当前队伍进行中" : "选中队伍后查看"}</span></div>
+                <div className={styles.metric}><strong>{selectedTeamId ? completedTaskCount : "—"}</strong><span>{selectedTeamId ? "当前队伍已完成" : "选中队伍后查看"}</span></div>
+              </div>
+              <section className={styles.activityBoard} aria-labelledby="formal-activities-heading">
+                <div className={styles.sectionHeading}>
+                  <div><span>01 / ACTIVITIES</span><h2 id="formal-activities-heading">活动</h2></div>
+                  <p>活动是最高层级，下面再展开队伍和任务。</p>
+                </div>
+                <form id="formal-activity-form" className={styles.activityForm} onSubmit={createActivity}>
+                  <label>
+                    活动名称
+                    <input value={activityTitle} onChange={(event) => setActivityTitle(event.target.value)} placeholder="例如：周末黑客松" required />
+                  </label>
+                  <label>
+                    活动说明（可选）
+                    <textarea value={activityDescription} onChange={(event) => setActivityDescription(event.target.value)} placeholder="给队友看的简短说明" rows={3} />
+                  </label>
+                  <button className={styles.primaryButton} type="submit" disabled={busy}><span>创建活动</span><b>↗</b></button>
+                </form>
+                <p className={styles.message} role="status" aria-live="polite">{activityMessage}</p>
+                <div className={styles.activityList}>
+                  <span className={styles.formIndex}>活动列表</span>
+                  {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
+                    <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
+                      <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
+                      <small>{activity.description || "暂无说明"}</small>
+                    </button>
+                  ))}
+                </div>
+              </section>
               {selectedActivityId && (
                 <div className={styles.teamPanel}>
                   <span className={styles.formIndex}>03 / TEAMS</span>
@@ -324,9 +359,6 @@ export function FormalAuthApp() {
                   {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><span>{task.progress}%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select></div>)}
                 </div>
               )}
-              <button type="button" className={styles.primaryButton} onClick={logout} disabled={busy}>
-                <span>{busy ? "退出中…" : "退出登录"}</span><b>↗</b>
-              </button>
               <p className={styles.authHint}>不要把浏览器 Cookie、密码或 Secret key 分享给任何人。</p>
             </div>
           ) : (
