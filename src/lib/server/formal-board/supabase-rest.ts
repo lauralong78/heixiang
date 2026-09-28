@@ -46,7 +46,7 @@ export async function supabaseRestRequest<T>(
   init: RequestInit = {},
   env: ServerEnvironment = process.env,
 ): Promise<T> {
-  if (!/^[a-z][a-z0-9_]{0,62}$/.test(table)) {
+  if (!/^[a-z][a-z0-9_]{0,62}$/.test(table) && !/^rpc\/formal_[a-z0-9_]{1,60}$/.test(table)) {
     throw new Error("Invalid Supabase table name.");
   }
 
@@ -71,4 +71,19 @@ export async function supabaseRestRequest<T>(
 
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
+}
+
+export async function supabaseRestRpc<T>(
+  functionName: string,
+  body: Record<string, unknown>,
+  env: ServerEnvironment = process.env,
+): Promise<T> {
+  if (!/^formal_[a-z0-9_]{1,60}$/.test(functionName)) {
+    throw new Error("Invalid Supabase function name.");
+  }
+
+  return supabaseRestRequest<T>(`rpc/${functionName}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  }, env);
 }
