@@ -4,7 +4,7 @@ const SUPABASE_REST_PATH = "/rest/v1";
 
 export type SupabaseRestConfig = {
   url: string;
-  serviceRoleKey: string;
+  serverKey: string;
 };
 
 export class SupabaseRestError extends Error {
@@ -21,9 +21,9 @@ export type ServerEnvironment = Record<string, string | undefined>;
 
 export function getSupabaseRestConfig(env: ServerEnvironment = process.env): SupabaseRestConfig {
   const url = env.SUPABASE_URL?.trim();
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serverKey = env.SUPABASE_SECRET_KEY?.trim() ?? env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-  if (!url || !serviceRoleKey) {
+  if (!url || !serverKey) {
     throw new Error("Formal board server configuration is incomplete.");
   }
 
@@ -38,7 +38,7 @@ export function getSupabaseRestConfig(env: ServerEnvironment = process.env): Sup
     throw new Error("Formal board server configuration is invalid.");
   }
 
-  return { url: parsedUrl.toString().replace(/\/$/, ""), serviceRoleKey };
+  return { url: parsedUrl.toString().replace(/\/$/, ""), serverKey };
 }
 
 export async function supabaseRestRequest<T>(
@@ -52,8 +52,8 @@ export async function supabaseRestRequest<T>(
 
   const config = getSupabaseRestConfig(env);
   const headers = new Headers(init.headers);
-  headers.set("apikey", config.serviceRoleKey);
-  headers.set("Authorization", `Bearer ${config.serviceRoleKey}`);
+  headers.set("apikey", config.serverKey);
+  headers.set("Authorization", `Bearer ${config.serverKey}`);
   headers.set("Accept", "application/json");
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");

@@ -8,10 +8,10 @@
 
 ```text
 SUPABASE_URL=https://<你的项目引用>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<Supabase 项目 API 页里的 service_role key>
+SUPABASE_SECRET_KEY=<Supabase 项目 API 页里的 Secret key>
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` 是服务端高权限凭证：不能放到 `NEXT_PUBLIC_*`、浏览器代码、截图、日志、提交或聊天中。不要把它发给赤玉；你只需在自己的电脑本地填写。
+`SUPABASE_SECRET_KEY` 是服务端高权限凭证：不能放到 `NEXT_PUBLIC_*`、浏览器代码、截图、日志、提交或聊天中。不要把它发给赤玉；你只需在自己的电脑本地填写。仓库仍兼容旧变量名 `SUPABASE_SERVICE_ROLE_KEY`，但新项目优先使用 `SUPABASE_SECRET_KEY`。
 
 服务端模块会拒绝非 HTTPS 地址、缺少配置的启动和无效表名；错误信息不会回显密钥。浏览器不能直接调用这层，后续 Route Handler 会在服务端完成 session、Membership 权限和审计。
 

@@ -17,10 +17,10 @@ describe("formal board server foundation", () => {
   it("normalizes a valid Supabase configuration without exposing it", () => {
     const config = getSupabaseRestConfig({
       SUPABASE_URL: "https://example.supabase.co/",
-      SUPABASE_SERVICE_ROLE_KEY: "server-only-value",
+      SUPABASE_SECRET_KEY: "server-only-value",
     });
     assert.equal(config.url, "https://example.supabase.co");
-    assert.equal(config.serviceRoleKey, "server-only-value");
+    assert.equal(config.serverKey, "server-only-value");
   });
 
   it("hashes and verifies passwords with a memory-hard hash", async () => {
