@@ -232,7 +232,7 @@ export function ProgressBoardApp() {
         <section className={styles.setupShell}>
           <div className={styles.setupIntro}>
             <p className={styles.kicker}>MISSION CONTROL / 现场指挥台</p>
-            <h1>时间、任务和进度，<br />放在一块看。</h1>
+            <h1>时间、任务和进度，放在一块看。</h1>
             <p>先建活动，再添加队伍和任务。倒计时与完成比例会自动更新，数据只保存在这个浏览器里。</p>
           </div>
           <form className={styles.setupForm} onSubmit={createEvent}>
