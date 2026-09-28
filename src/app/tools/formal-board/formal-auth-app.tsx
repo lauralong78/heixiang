@@ -8,6 +8,7 @@ type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
 type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string };
 type Team = { id: string; name: string; description: string; task_count: number; sort_order: number };
+type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number };
 
 function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
@@ -29,6 +30,11 @@ export function FormalAuthApp() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskMessage, setTaskMessage] = useState("");
   const [teamName, setTeamName] = useState("");
   const [teamDescription, setTeamDescription] = useState("");
   const [teamMessage, setTeamMessage] = useState("");
@@ -96,6 +102,19 @@ export function FormalAuthApp() {
       .catch(() => setTeamMessage("队伍读取失败，请检查网络后重试。"));
   }, [selectedActivityId]);
 
+  useEffect(() => {
+    if (!selectedActivityId || !selectedTeamId) return;
+    fetch(`/api/formal-board/tasks?activityId=${encodeURIComponent(selectedActivityId)}&teamId=${encodeURIComponent(selectedTeamId)}`, { cache: "no-store" })
+      .then(async (response) => ({ response, payload: await response.json() as unknown }))
+      .then(({ response, payload }) => {
+        if (!response.ok) { setTaskMessage(extractMessage(payload, "任务暂时无法读取。")); return; }
+        const data = (payload as { data?: { tasks?: Task[] } }).data;
+        setTasks(data?.tasks ?? []);
+        setTaskMessage("");
+      })
+      .catch(() => setTaskMessage("任务读取失败，请检查网络后重试。"));
+  }, [selectedActivityId, selectedTeamId]);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (mode === "register" && password !== confirmPassword) {
@@ -147,6 +166,8 @@ export function FormalAuthApp() {
       setActivities([]);
       setSelectedActivityId(null);
       setTeams([]);
+      setSelectedTeamId(null);
+      setTasks([]);
       setMode("login");
       setMessage("已退出登录。");
     } catch {
@@ -205,6 +226,33 @@ export function FormalAuthApp() {
     }
   }
 
+  async function createTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedActivityId || !selectedTeamId) return;
+    setTaskMessage("正在创建任务…");
+    try {
+      const response = await fetch("/api/formal-board/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, teamId: selectedTeamId, title: taskTitle, description: taskDescription }) });
+      const payload = await response.json() as unknown;
+      if (!response.ok) { setTaskMessage(extractMessage(payload, "任务创建失败，请稍后重试。")); return; }
+      const data = (payload as { data?: { task?: Task } }).data;
+      if (data?.task) setTasks((current) => [...current, data.task as Task]);
+      setTaskTitle(""); setTaskDescription(""); setTaskMessage("任务已创建，状态可以继续更新。");
+    } catch { setTaskMessage("网络连接失败，任务没有被标记为已创建。"); }
+  }
+
+  async function changeTaskStatus(task: Task, status: Task["status"]) {
+    if (!selectedActivityId) return;
+    setTaskMessage("正在更新任务…");
+    try {
+      const response = await fetch("/api/formal-board/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, taskId: task.id, status, expectedVersion: task.data_version }) });
+      const payload = await response.json() as unknown;
+      if (!response.ok) { setTaskMessage(extractMessage(payload, "任务更新失败，请刷新后重试。")); return; }
+      const data = (payload as { data?: { task?: Task } }).data;
+      if (data?.task) setTasks((current) => current.map((item) => item.id === task.id ? data.task as Task : item));
+      setTaskMessage("任务状态已更新。");
+    } catch { setTaskMessage("网络连接失败，任务状态未确认。"); }
+  }
+
   return (
     <main className={styles.page}>
       <div className={styles.scanline} aria-hidden="true" />
@@ -243,7 +291,7 @@ export function FormalAuthApp() {
               <div className={styles.activityList}>
                 <span className={styles.formIndex}>02 / YOUR ACTIVITIES</span>
                 {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
-                  <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => setSelectedActivityId(activity.id)}>
+                  <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
                     <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
                     <small>{activity.description || "暂无说明"}</small>
                   </button>
@@ -258,7 +306,19 @@ export function FormalAuthApp() {
                     <button className={styles.primaryButton} type="submit"><span>创建队伍</span><b>↗</b></button>
                   </form>
                   <p className={styles.message} role="status" aria-live="polite">{teamMessage}</p>
-                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <div className={styles.teamItem} key={team.id}><strong>{team.name}</strong><span>{team.task_count} 个任务</span></div>)}
+                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <button type="button" className={`${styles.teamItem} ${selectedTeamId === team.id ? styles.teamItemActive : ""}`} key={team.id} onClick={() => setSelectedTeamId(team.id)}><strong>{team.name}</strong><span>{team.task_count} 个任务</span></button>)}
+                </div>
+              )}
+              {selectedActivityId && selectedTeamId && (
+                <div className={styles.taskPanel}>
+                  <span className={styles.formIndex}>04 / TASKS</span>
+                  <form className={styles.activityForm} onSubmit={createTask}>
+                    <label>任务标题<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder="例如：完成首页原型" required /></label>
+                    <label>任务说明（可选）<input value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} placeholder="任务完成标准" /></label>
+                    <button className={styles.primaryButton} type="submit"><span>创建任务</span><b>↗</b></button>
+                  </form>
+                  <p className={styles.message} role="status" aria-live="polite">{taskMessage}</p>
+                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><span>{task.progress}%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select></div>)}
                 </div>
               )}
               <button type="button" className={styles.primaryButton} onClick={logout} disabled={busy}>
