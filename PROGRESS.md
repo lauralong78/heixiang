@@ -27,7 +27,7 @@
 ## 进行中
 
 - 正式版进度看板后端设计已完成：模型、权限、API 边界、幂等/并发、轮询、附件安全、审计和可观察验收已写入 `docs/formal-board/`。
-- HK-300 公共后端底座已开始：本地权限/错误/幂等契约和 Supabase Postgres migration 草案已建立；尚未应用到真实 Supabase 项目。
+- HK-300 公共后端底座已开始：本地权限/错误/幂等契约已建立，`supabase/migrations/0001_formal_board.sql` 已应用到用户创建的 Supabase 项目，并通过只读查询核验 9 张目标表存在。
 - HK-301 → HK-301-UI → HK-301-QA 的实施任务已拆分，但尚未创建托管数据库、对象存储、Secret、部署或外部账号。
 
 ## 待完成
