@@ -4,7 +4,7 @@ import { newRequestId } from "@/lib/server/formal-board/auth-service";
 import { makeApiFailure } from "@/lib/server/formal-board/contracts";
 import { FORMAL_BOARD_SESSION_COOKIE } from "@/lib/server/formal-board/session";
 import { getCurrentUserFromToken } from "@/lib/server/formal-board/session-service";
-import { createTask, listTasks, updateTaskStatus } from "@/lib/server/formal-board/task-service";
+import { createTask, listTasks, updateTaskProgress, updateTaskStatus } from "@/lib/server/formal-board/task-service";
 import { parseTaskInput, TaskInputError } from "@/lib/server/formal-board/task";
 import { SupabaseRestError } from "@/lib/server/formal-board/supabase-rest";
 
@@ -54,9 +54,12 @@ export async function PATCH(request: Request) {
     const body = await request.json() as Record<string, unknown>;
     const ids = [body.activityId, body.taskId].map((v) => typeof v === "string" ? v : "");
     const status = typeof body.status === "string" ? body.status : "";
+    const progress = typeof body.progress === "number" ? body.progress : null;
     const version = typeof body.expectedVersion === "number" ? body.expectedVersion : -1;
-    if (!ids[0] || !ids[1] || !["todo", "doing", "done"].includes(status) || version < 1) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "任务状态或版本无效。"), { status: 400 });
-    const task = await updateTaskStatus({ userId: current.user.id, activityId: ids[0], taskId: ids[1], status, expectedVersion: version, requestId });
+    if (!ids[0] || !ids[1] || !["todo", "doing", "done"].includes(status) || version < 1 || (progress !== null && (!Number.isInteger(progress) || progress < 0 || progress > 100))) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "任务状态、进度或版本无效。"), { status: 400 });
+    const task = progress === null
+      ? await updateTaskStatus({ userId: current.user.id, activityId: ids[0], taskId: ids[1], status, expectedVersion: version, requestId })
+      : await updateTaskProgress({ userId: current.user.id, activityId: ids[0], taskId: ids[1], status, progress, expectedVersion: version, requestId });
     return Response.json({ ok: true, data: { task }, requestId });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "任务已被其他人修改，请刷新后重试。"), { status: 409 });

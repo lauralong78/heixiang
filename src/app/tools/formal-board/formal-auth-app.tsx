@@ -243,11 +243,11 @@ export function FormalAuthApp() {
     } catch { setTaskMessage("网络连接失败，任务没有被标记为已创建。"); }
   }
 
-  async function changeTaskStatus(task: Task, status: Task["status"]) {
+  async function changeTaskStatus(task: Task, status: Task["status"], progress = status === "done" ? 100 : status === "todo" ? 0 : task.progress) {
     if (!selectedActivityId) return;
     setTaskMessage("正在更新任务…");
     try {
-      const response = await fetch("/api/formal-board/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, taskId: task.id, status, expectedVersion: task.data_version }) });
+      const response = await fetch("/api/formal-board/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, taskId: task.id, status, progress, expectedVersion: task.data_version }) });
       const payload = await response.json() as unknown;
       if (!response.ok) { setTaskMessage(extractMessage(payload, "任务更新失败，请刷新后重试。")); return; }
       const data = (payload as { data?: { task?: Task } }).data;
@@ -356,7 +356,7 @@ export function FormalAuthApp() {
                     <button className={styles.primaryButton} type="submit"><span>创建任务</span><b>↗</b></button>
                   </form>
                   <p className={styles.message} role="status" aria-live="polite">{taskMessage}</p>
-                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><span>{task.progress}%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select></div>)}
+                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><input className={styles.taskProgressInput} type="number" min="0" max="100" value={task.progress} onChange={(event) => changeTaskStatus(task, task.status, Number(event.target.value))} aria-label={`更新任务 ${task.title} 进度`} /><span>%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select></div>)}
                 </div>
               )}
               <p className={styles.authHint}>不要把浏览器 Cookie、密码或 Secret key 分享给任何人。</p>
