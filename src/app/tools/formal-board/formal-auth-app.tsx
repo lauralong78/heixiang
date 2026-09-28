@@ -92,10 +92,16 @@ export function FormalAuthApp() {
         return;
       }
       const data = (payload as { data?: { user?: PublicUser } }).data;
-      setUser(data?.user ?? null);
+      if (mode === "register") {
+        setUser(null);
+        setMode("login");
+        setMessage("账号已创建，请切换到登录并重新输入密码。");
+      } else {
+        setUser(data?.user ?? null);
+        setMessage("登录成功。登录状态由安全 Cookie 保存。" );
+      }
       setPassword("");
       setConfirmPassword("");
-      setMessage(mode === "register" ? "账号已创建，请继续进入正式版看板。" : "登录成功。登录状态由安全 Cookie 保存。" );
     } catch {
       setMessage("网络连接失败，数据没有被标记为成功。请稍后重试。");
     } finally {
@@ -211,7 +217,7 @@ export function FormalAuthApp() {
                 </label>
                 <label>
                   密码
-                  <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="至少 10 位" required />
+                  <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="至少 6 位" required />
                 </label>
                 {mode === "register" && (
                   <label>

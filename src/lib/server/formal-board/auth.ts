@@ -1,7 +1,7 @@
 import "server-only";
 
 const LOGIN_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
-const PASSWORD_MIN_LENGTH = 10;
+const PASSWORD_MIN_LENGTH = 6;
 const PASSWORD_MAX_LENGTH = 128;
 
 export type Credentials = {
@@ -30,7 +30,7 @@ export function parseCredentials(input: unknown): Credentials {
     throw new AuthInputError("账号需为 3–32 位字母、数字、点、下划线或短横线。");
   }
   if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-    throw new AuthInputError("密码长度需为 10–128 位。");
+    throw new AuthInputError("密码长度需为 6–128 位。");
   }
 
   return { loginId, loginIdNormalized: loginId.toLowerCase(), password };
