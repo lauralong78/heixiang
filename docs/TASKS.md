@@ -25,7 +25,7 @@
 
 | ID | Owner | 状态 | 依赖 | Write set | 验收 |
 | --- | --- | --- | --- | --- | --- |
-| HK-300 | 总控/公共后端任务 | pending | 正式版设计基线；用户授权托管运行方式 | 认证、数据库访问、公共服务端校验/类型、对应测试；具体路径开工前冻结 | 自建 ID/密码、强哈希、session cookie、User/Activity/Membership、角色判定、统一错误、幂等基础、AuditEvent；不泄露密码/session/联系方式 |
+| HK-300 | 总控/公共后端任务 | in_progress | 正式版设计基线；用户授权托管运行方式 | 认证、数据库访问、公共服务端校验/类型、对应测试；具体路径开工前冻结 | 自建 ID/密码、强哈希、session cookie、User/Activity/Membership、角色判定、统一错误、幂等基础、AuditEvent；不泄露密码/session/联系方式 |
 | HK-301 | 进度看板服务端任务 | pending | HK-300 | 看板专用 service、Route Handler/Server Action、schema/迁移、附件 adapter 与测试 | 邀请加入、Team/Task CRUD、版本并发、轮询快照、附件授权、越权/重复/失败态和最小审计 |
 | HK-301-UI | 进度看板页面任务 | pending | HK-301；前端风格参考 | 看板页面/私有组件/样式、客户端 API 调用和测试 | 两个独立浏览器、刷新/轮询、角色/冲突/网络/附件错误态可观察；不改公共导航与后端契约 |
 | HK-301-QA | 总控 | pending | HK-300、HK-301、HK-301-UI；托管资源和测试账号单独授权 | 集成文档、任务板、进度投影及总控批准的修复 | 真实跨设备、越权、重复请求、附件、审计、服务失败态验收；证据齐全后才可标记正式版可用 |
