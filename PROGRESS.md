@@ -27,13 +27,13 @@
 ## 进行中
 
 - 正式版进度看板后端设计已完成：模型、权限、API 边界、幂等/并发、轮询、附件安全、审计和可观察验收已写入 `docs/formal-board/`。
-- HK-300 公共后端底座已开始：本地权限/错误/幂等契约已建立，`supabase/migrations/0001_formal_board.sql` 已应用到用户创建的 Supabase 项目，并通过只读查询核验 9 张目标表存在；已补齐仅服务端 Supabase REST 边界、scrypt 密码哈希和 session token/digest 基础，配置说明见 `docs/formal-board/LOCAL_SERVER_SETUP.md`。
+- HK-300 公共后端底座已开始：`0001_formal_board.sql` 与 `0002_formal_auth_rpc.sql` 已应用到用户创建的 Supabase 项目，并通过只读查询核验 9 张目标表存在；已补齐仅服务端 Supabase REST 边界、scrypt 密码哈希、注册/登录、session cookie、当前用户和退出撤销接口，配置说明见 `docs/formal-board/LOCAL_SERVER_SETUP.md`。`0003_formal_session_revoke.sql` 已生成，等待应用。
 - HK-301 → HK-301-UI → HK-301-QA 的实施任务已拆分，但尚未创建托管数据库、对象存储、Secret、部署或外部账号。
 
 ## 待完成
 
 - 公开部署、真实 DeepSeek Key 调用和两个真实账号的登录工具仍需独立验收与授权。
-- 正式版进度看板尚未实现；当前多人工具仍是本机演示，不支持真实跨设备共享。尚未实现注册/登录 API、数据库 session 写入、活动/成员/队伍/任务 API、附件存储或页面接入。
+- 正式版进度看板尚未实现；当前多人工具仍是本机演示，不支持真实跨设备共享。尚未完成 `0003` 应用、真实账号注册/登录浏览器验收、活动/成员/队伍/任务 API、附件存储或页面接入。
 - 需要用户决定托管数据库/私有对象存储平台、可接受的附件大小/配额、测试账号与部署时机；决定前不得创建外部资源。
 
 ## 下一动作
