@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
 import { ActivityInputError, parseActivityInput } from "@/lib/server/formal-board/activity";
-import { createActivity, listActivities } from "@/lib/server/formal-board/activity-service";
+import { createActivityWithDeadline, listActivities } from "@/lib/server/formal-board/activity-service";
 import { newRequestId } from "@/lib/server/formal-board/auth-service";
 import { makeApiFailure } from "@/lib/server/formal-board/contracts";
 import { FORMAL_BOARD_SESSION_COOKIE } from "@/lib/server/formal-board/session";
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const current = await requireUser();
     if (!current) return Response.json(makeApiFailure(requestId, "UNAUTHENTICATED", "请先登录。"), { status: 401 });
     const input = parseActivityInput(await request.json());
-    const activity = await createActivity({ ...input, userId: current.user.id, requestId });
+    const activity = await createActivityWithDeadline({ ...input, userId: current.user.id, requestId });
     return Response.json({ ok: true, data: { activity }, requestId }, { status: 201 });
   } catch (error) {
     if (error instanceof ActivityInputError) {

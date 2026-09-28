@@ -6,9 +6,10 @@ import styles from "../progress-board/progress-board.module.css";
 
 type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
-type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string };
-type Team = { id: string; name: string; description: string; task_count: number; sort_order: number };
+type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string; deadline_at?: string | null };
+type Team = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number };
 type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number };
+type ActivityStats = { total: number; doing: number; done: number; progress: number };
 
 function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
@@ -32,6 +33,7 @@ export function FormalAuthApp() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [activityStats, setActivityStats] = useState<ActivityStats>({ total: 0, doing: 0, done: 0, progress: 0 });
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskMessage, setTaskMessage] = useState("");
@@ -40,15 +42,22 @@ export function FormalAuthApp() {
   const [teamMessage, setTeamMessage] = useState("");
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
+  const [activityDeadlineInput, setActivityDeadlineInput] = useState("");
   const [activityMessage, setActivityMessage] = useState("");
   const [message, setMessage] = useState("正在检查登录状态…");
   const [busy, setBusy] = useState(true);
+  const [clock, setClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/formal-board/auth/me", { cache: "no-store" })
       .then(async (response) => ({ response, payload: await response.json() as unknown }))
-      .then(({ response, payload }) => {
+      .then(async ({ response, payload }) => {
         if (cancelled) return;
         if (response.ok && payload && typeof payload === "object" && "data" in payload) {
           const data = (payload as { data?: { user?: PublicUser } }).data;
@@ -90,13 +99,27 @@ export function FormalAuthApp() {
     }
     fetch(`/api/formal-board/teams?activityId=${encodeURIComponent(selectedActivityId)}`, { cache: "no-store" })
       .then(async (response) => ({ response, payload: await response.json() as unknown }))
-      .then(({ response, payload }) => {
+      .then(async ({ response, payload }) => {
         if (!response.ok) {
           setTeamMessage(extractMessage(payload, "队伍暂时无法读取。"));
           return;
         }
         const data = (payload as { data?: { teams?: Team[] } }).data;
-        setTeams(data?.teams ?? []);
+        const nextTeams = data?.teams ?? [];
+        setTeams(nextTeams);
+        const taskLists = await Promise.all(nextTeams.map(async (team) => {
+          const response = await fetch(`/api/formal-board/tasks?activityId=${encodeURIComponent(selectedActivityId)}&teamId=${encodeURIComponent(team.id)}`, { cache: "no-store" });
+          if (!response.ok) return [] as Task[];
+          const payload = await response.json() as { data?: { tasks?: Task[] } };
+          return payload.data?.tasks ?? [];
+        }));
+        const allTasks = taskLists.flat();
+        setActivityStats({
+          total: allTasks.length,
+          doing: allTasks.filter((task) => task.status === "doing").length,
+          done: allTasks.filter((task) => task.status === "done").length,
+          progress: allTasks.length ? Math.round(allTasks.reduce((sum, task) => sum + task.progress, 0) / allTasks.length) : 0,
+        });
         setTeamMessage("");
       })
       .catch(() => setTeamMessage("队伍读取失败，请检查网络后重试。"));
@@ -168,6 +191,7 @@ export function FormalAuthApp() {
       setTeams([]);
       setSelectedTeamId(null);
       setTasks([]);
+      setActivityStats({ total: 0, doing: 0, done: 0, progress: 0 });
       setMode("login");
       setMessage("已退出登录。");
     } catch {
@@ -184,7 +208,7 @@ export function FormalAuthApp() {
       const response = await fetch("/api/formal-board/activities", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: activityTitle, description: activityDescription }),
+        body: JSON.stringify({ title: activityTitle, description: activityDescription, deadlineAt: activityDeadlineInput ? new Date(activityDeadlineInput).toISOString() : null }),
       });
       const payload = await response.json() as unknown;
       if (!response.ok) {
@@ -195,6 +219,7 @@ export function FormalAuthApp() {
       if (data?.activity) setActivities((current) => [data.activity as Activity, ...current]);
       setActivityTitle("");
       setActivityDescription("");
+      setActivityDeadlineInput("");
       setActivityMessage("活动已创建，主持人权限已由服务器确认。");
     } catch {
       setActivityMessage("网络连接失败，活动没有被标记为已创建。");
@@ -217,13 +242,35 @@ export function FormalAuthApp() {
         return;
       }
       const data = (payload as { data?: { team?: Team } }).data;
-      if (data?.team) setTeams((current) => [...current, data.team as Team]);
+      if (data?.team) setTeams((current) => [...current, { ...(data.team as Team), data_version: 1 }]);
       setTeamName("");
       setTeamDescription("");
       setTeamMessage("队伍已创建，写入权限由服务器确认。");
     } catch {
       setTeamMessage("网络连接失败，队伍没有被标记为已创建。");
     }
+  }
+
+  async function editTeam(team: Team) {
+    if (!selectedActivityId) return;
+    const name = window.prompt("队伍名称", team.name)?.trim();
+    if (!name || name === team.name) return;
+    const response = await fetch("/api/formal-board/teams", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, teamId: team.id, name, description: team.description, expectedVersion: team.data_version }) });
+    const payload = await response.json() as unknown;
+    if (!response.ok) { setTeamMessage(extractMessage(payload, "队伍修改失败，请刷新后重试。")); return; }
+    const data = (payload as { data?: { team?: Team } }).data;
+    if (data?.team) setTeams((current) => current.map((item) => item.id === team.id ? data.team as Team : item));
+    setTeamMessage("队伍已修改。");
+  }
+
+  async function removeTeam(team: Team) {
+    if (!selectedActivityId || team.data_version === undefined || !window.confirm(`确认删除队伍“${team.name}”？任务会保留历史但不再显示。`)) return;
+    const response = await fetch(`/api/formal-board/teams?activityId=${encodeURIComponent(selectedActivityId)}&teamId=${encodeURIComponent(team.id)}&expectedVersion=${team.data_version}`, { method: "DELETE" });
+    const payload = await response.json() as unknown;
+    if (!response.ok) { setTeamMessage(extractMessage(payload, "队伍删除失败，请刷新后重试。")); return; }
+    setTeams((current) => current.filter((item) => item.id !== team.id));
+    if (selectedTeamId === team.id) { setSelectedTeamId(null); setTasks([]); }
+    setTeamMessage("队伍已删除。");
   }
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
@@ -257,10 +304,14 @@ export function FormalAuthApp() {
   }
 
   const selectedActivity = activities.find((activity) => activity.id === selectedActivityId);
-  const totalTaskCount = teams.reduce((sum, team) => sum + team.task_count, 0);
+  const totalTaskCount = activityStats.total || teams.reduce((sum, team) => sum + team.task_count, 0);
   const completedTaskCount = tasks.filter((task) => task.status === "done").length;
   const activeTaskCount = tasks.filter((task) => task.status === "doing").length;
   const selectedTeamProgress = tasks.length ? Math.round(tasks.reduce((sum, task) => sum + task.progress, 0) / tasks.length) : 0;
+  const activityDeadline = selectedActivity?.deadline_at ? new Date(selectedActivity.deadline_at) : null;
+  const activityDeadlineLabel = activityDeadline && !Number.isNaN(activityDeadline.getTime()) ? activityDeadline.toLocaleString("zh-CN", { hour12: false }) : "未设置截止时间";
+  const remainingSeconds = activityDeadline && !Number.isNaN(activityDeadline.getTime()) ? Math.max(0, Math.floor((activityDeadline.getTime() - clock) / 1000)) : null;
+  const remainingLabel = remainingSeconds === null ? "未设置倒计时" : remainingSeconds === 0 ? "已截止" : `${Math.floor(remainingSeconds / 86400)}天 ${String(Math.floor((remainingSeconds % 86400) / 3600)).padStart(2, "0")}时 ${String(Math.floor((remainingSeconds % 3600) / 60)).padStart(2, "0")}分`;
 
   return (
     <main className={styles.page}>
@@ -285,6 +336,8 @@ export function FormalAuthApp() {
                   <span className={styles.formIndex}>LIVE EVENT / 现场进度</span>
                   <h2>{selectedActivity?.title || "选择一个活动"}</h2>
                   <p>{selectedActivity ? (selectedActivity.description || "正式版活动正在服务器上同步。") : `欢迎回来，${user.loginId}。先创建或选择一个活动。`}</p>
+                  {selectedActivity && <small className={styles.deadlineText}>截止：{activityDeadlineLabel}</small>}
+                  {selectedActivity && <strong className={styles.countdownText}>剩余：{remainingLabel}</strong>}
                 </div>
                 <div className={styles.dashboardStatus}>
                   <span>SERVER SESSION</span>
@@ -300,13 +353,13 @@ export function FormalAuthApp() {
               <div className={styles.metrics} aria-label="活动统计">
                 <div className={styles.metricLead}>
                   <span>{selectedTeamId ? "SELECTED TEAM PROGRESS" : "ACTIVITY PROGRESS"}</span>
-                  <strong>{selectedTeamId ? selectedTeamProgress : "—"}<small>{selectedTeamId ? "%" : ""}</small></strong>
-                  <div className={styles.progressTrack}><i style={{ transform: `scaleX(${(selectedTeamId ? selectedTeamProgress : 0) / 100})` }} /></div>
+                  <strong>{selectedTeamId ? selectedTeamProgress : activityStats.progress}<small>%</small></strong>
+                  <div className={styles.progressTrack}><i style={{ transform: `scaleX(${(selectedTeamId ? selectedTeamProgress : activityStats.progress) / 100})` }} /></div>
                 </div>
                 <div className={styles.metric}><strong>{teams.length}</strong><span>队伍</span></div>
                 <div className={styles.metric}><strong>{totalTaskCount}</strong><span>总任务</span></div>
-                <div className={styles.metric}><strong>{activeTaskCount}</strong><span>{selectedTeamId ? "当前队伍进行中" : "选中队伍后查看"}</span></div>
-                <div className={styles.metric}><strong>{selectedTeamId ? completedTaskCount : "—"}</strong><span>{selectedTeamId ? "当前队伍已完成" : "选中队伍后查看"}</span></div>
+                <div className={styles.metric}><strong>{selectedTeamId ? activeTaskCount : activityStats.doing}</strong><span>{selectedTeamId ? "当前队伍进行中" : "活动进行中"}</span></div>
+                <div className={styles.metric}><strong>{selectedTeamId ? completedTaskCount : activityStats.done}</strong><span>{selectedTeamId ? "当前队伍已完成" : "活动已完成"}</span></div>
               </div>
               <section className={styles.activityBoard} aria-labelledby="formal-activities-heading">
                 <div className={styles.sectionHeading}>
@@ -322,6 +375,10 @@ export function FormalAuthApp() {
                     活动说明（可选）
                     <textarea value={activityDescription} onChange={(event) => setActivityDescription(event.target.value)} placeholder="给队友看的简短说明" rows={3} />
                   </label>
+                  <label>
+                    截止时间（可选）
+                    <input type="datetime-local" value={activityDeadlineInput} onChange={(event) => setActivityDeadlineInput(event.target.value)} />
+                  </label>
                   <button className={styles.primaryButton} type="submit" disabled={busy}><span>创建活动</span><b>↗</b></button>
                 </form>
                 <p className={styles.message} role="status" aria-live="polite">{activityMessage}</p>
@@ -330,7 +387,7 @@ export function FormalAuthApp() {
                   {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
                     <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
                       <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
-                      <small>{activity.description || "暂无说明"}</small>
+                      <small>{activity.description || "暂无说明"}{activity.deadline_at ? ` · 截止 ${new Date(activity.deadline_at).toLocaleString("zh-CN", { hour12: false })}` : ""}</small>
                     </button>
                   ))}
                 </div>
@@ -344,7 +401,7 @@ export function FormalAuthApp() {
                     <button className={styles.primaryButton} type="submit"><span>创建队伍</span><b>↗</b></button>
                   </form>
                   <p className={styles.message} role="status" aria-live="polite">{teamMessage}</p>
-                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <button type="button" className={`${styles.teamItem} ${selectedTeamId === team.id ? styles.teamItemActive : ""}`} key={team.id} onClick={() => setSelectedTeamId(team.id)}><strong>{team.name}</strong><span>{team.task_count} 个任务</span></button>)}
+                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <div className={`${styles.teamItem} ${selectedTeamId === team.id ? styles.teamItemActive : ""}`} key={team.id} onClick={() => setSelectedTeamId(team.id)} role="button" tabIndex={0}><strong>{team.name}</strong><span>{team.task_count} 个任务</span><div className={styles.itemActions}><button type="button" onClick={(event) => { event.stopPropagation(); void editTeam(team); }}>编辑</button><button type="button" onClick={(event) => { event.stopPropagation(); void removeTeam(team); }}>删除</button></div></div>)}
                 </div>
               )}
               {selectedActivityId && selectedTeamId && (

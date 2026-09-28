@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
 import { isUuid, parseTeamInput, TeamInputError } from "@/lib/server/formal-board/team";
-import { createTeam, listTeams } from "@/lib/server/formal-board/team-service";
+import { createTeam, deleteTeam, listTeams, updateTeam } from "@/lib/server/formal-board/team-service";
 import { newRequestId } from "@/lib/server/formal-board/auth-service";
 import { makeApiFailure } from "@/lib/server/formal-board/contracts";
 import { FORMAL_BOARD_SESSION_COOKIE } from "@/lib/server/formal-board/session";
@@ -40,5 +40,43 @@ export async function POST(request: Request) {
     if (error instanceof TeamInputError) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", error.message), { status: 400 });
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "队伍名称已存在。"), { status: 409 });
     return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "队伍暂时无法创建，请稍后重试。", true), { status: 503 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const requestId = newRequestId();
+  try {
+    const current = await requireUser();
+    if (!current) return Response.json(makeApiFailure(requestId, "UNAUTHENTICATED", "请先登录。"), { status: 401 });
+    const body = await request.json() as Record<string, unknown>;
+    const activityId = typeof body.activityId === "string" ? body.activityId : "";
+    const teamId = typeof body.teamId === "string" ? body.teamId : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const description = typeof body.description === "string" ? body.description.trim() : "";
+    const expectedVersion = typeof body.expectedVersion === "number" ? body.expectedVersion : -1;
+    if (!isUuid(activityId) || !isUuid(teamId) || !name || expectedVersion < 1) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "队伍信息或版本无效。"), { status: 400 });
+    const team = await updateTeam({ userId: current.user.id, activityId, teamId, name, description, expectedVersion, requestId });
+    return Response.json({ ok: true, data: { team }, requestId });
+  } catch (error) {
+    if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "队伍已被其他人修改，请刷新后重试。"), { status: 409 });
+    return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "队伍暂时无法修改，请稍后重试。", true), { status: 503 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const requestId = newRequestId();
+  try {
+    const current = await requireUser();
+    const query = new URL(request.url).searchParams;
+    const activityId = query.get("activityId") ?? "";
+    const teamId = query.get("teamId") ?? "";
+    const expectedVersion = Number(query.get("expectedVersion"));
+    if (!current) return Response.json(makeApiFailure(requestId, "UNAUTHENTICATED", "请先登录。"), { status: 401 });
+    if (!isUuid(activityId) || !isUuid(teamId) || !Number.isInteger(expectedVersion) || expectedVersion < 1) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "队伍标识或版本无效。"), { status: 400 });
+    await deleteTeam({ userId: current.user.id, activityId, teamId, expectedVersion, requestId });
+    return Response.json({ ok: true, data: { deleted: true }, requestId });
+  } catch (error) {
+    if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "队伍已被其他人修改，请刷新后重试。"), { status: 409 });
+    return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "队伍暂时无法删除，请稍后重试。", true), { status: 503 });
   }
 }
