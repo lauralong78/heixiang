@@ -235,7 +235,10 @@ export function FormalAuthApp() {
       const payload = await response.json() as unknown;
       if (!response.ok) { setTaskMessage(extractMessage(payload, "任务创建失败，请稍后重试。")); return; }
       const data = (payload as { data?: { task?: Task } }).data;
-      if (data?.task) setTasks((current) => [...current, data.task as Task]);
+      if (data?.task) {
+        setTasks((current) => [...current, data.task as Task]);
+        setTeams((current) => current.map((team) => team.id === selectedTeamId ? { ...team, task_count: team.task_count + 1 } : team));
+      }
       setTaskTitle(""); setTaskDescription(""); setTaskMessage("任务已创建，状态可以继续更新。");
     } catch { setTaskMessage("网络连接失败，任务没有被标记为已创建。"); }
   }
