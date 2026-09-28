@@ -85,3 +85,13 @@ type ApiResult<T> =
 第三阶段不添加数据库、API route、Server Action、真实登录、跨设备同步、邮件/短信邀请、真实 QR 安全凭证、线上部署或远程推送。若未来引入服务端，必须新增服务端认证、授权、并发唯一约束、审计和 CSRF/速率限制设计，不能把本机 demo 的 role 字段直接当安全边界。
 
 公共文件冲突由总控解决；功能任务不得越界修改其他任务写集。
+
+## 正式版进度看板后端边界（HK-300 / HK-301）
+
+正式版与 `same-browser-demo` 分层：正式版必须由服务端 session、关系型数据库事务和服务端 Membership 授权组成安全边界；客户端按钮、URL、localStorage、导入文件和角色字段只用于交互，不能作为认证或授权依据。详细模型、API、附件和验收见 [`docs/formal-board/FORMAL_BOARD_BACKEND_DESIGN.md`](formal-board/FORMAL_BOARD_BACKEND_DESIGN.md)。
+
+最小正式版公共实体为 `User`、`Session`、`Activity`、`Membership`、`Team`、`Task`、`Attachment`、`AuditEvent`。用户 ID 在活动内唯一，角色由 Membership 得出；队伍名称、幂等 operationId、附件对象键和业务资源归属必须有数据库约束；任务更新使用版本号/乐观并发，业务写入、版本递增和审计在同一事务内完成。联系方式默认私有且不进入审计；审计为安全/业务写操作的 append-only 白名单。
+
+服务端接口统一沿用 `ApiResult<T>`，写操作按“session → 用户状态 → 资源/活动归属 → Membership/角色 → 业务前置条件 → 事务/唯一约束/版本 → 审计 → 返回 requestId”判定。认证、授权、幂等、审计和附件授权放在公共 service 层；Route Handler/Server Action 只做输入边界和调用，不在页面中复制权限逻辑。轮询使用 `dataVersion`/ETag，普通读取和轮询不写业务审计。
+
+附件采用私有对象存储 adapter，首版仅允许显式白名单 MIME/大小，下载每次重新授权，删除先标记不可用再受控清理；在用户授权托管平台、Secret、部署和外部资源之前不得接入真实服务。不得修改现有本机工具的 localStorage 数据来伪造跨设备迁移。
