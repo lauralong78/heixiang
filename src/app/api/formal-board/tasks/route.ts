@@ -37,7 +37,12 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof TaskInputError) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", error.message), { status: 400 });
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "任务创建冲突，请重试。"), { status: 409 });
-    return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "任务暂时无法创建，请稍后重试。", true), { status: 503 });
+    if (error instanceof SupabaseRestError && error.status === 400) {
+      console.error("[formal-board] task create rejected", { requestId, status: error.status, details: error.details });
+      return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "数据库拒绝了任务内容，请确认第 6 个迁移已成功执行，并重试。"), { status: 400 });
+    }
+    if (error instanceof SupabaseRestError) console.error("[formal-board] task create failed", { requestId, status: error.status, details: error.details });
+    return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "任务暂时无法创建，请保持 TUN 或代理网络开启后重试。", true), { status: 503 });
   }
 }
 
@@ -55,6 +60,7 @@ export async function PATCH(request: Request) {
     return Response.json({ ok: true, data: { task }, requestId });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "任务已被其他人修改，请刷新后重试。"), { status: 409 });
-    return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "任务暂时无法更新，请稍后重试。", true), { status: 503 });
+    if (error instanceof SupabaseRestError) console.error("[formal-board] task update failed", { requestId, status: error.status, details: error.details });
+    return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "任务暂时无法更新，请保持 TUN 或代理网络开启后重试。", true), { status: 503 });
   }
 }

@@ -9,11 +9,13 @@ export type SupabaseRestConfig = {
 
 export class SupabaseRestError extends Error {
   readonly status: number;
+  readonly details: string;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, details = "") {
     super(message);
     this.name = "SupabaseRestError";
     this.status = status;
+    this.details = details;
   }
 }
 
@@ -67,7 +69,8 @@ export async function supabaseRestRequest<T>(
   });
 
   if (!response.ok) {
-    throw new SupabaseRestError("Supabase request failed.", response.status);
+    const details = (await response.text()).slice(0, 600);
+    throw new SupabaseRestError("Supabase request failed.", response.status, details);
   }
 
   if (response.status === 204) return undefined as T;
