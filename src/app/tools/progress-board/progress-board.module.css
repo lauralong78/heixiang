@@ -85,6 +85,17 @@
 .authStatus strong { font-size: clamp(24px, 3vw, 38px); letter-spacing: -0.06em; line-height: 1; }
 .authStatus p { margin: 0; color: var(--pb-muted); font-size: 13px; line-height: 1.7; }
 .authStatus .primaryButton { margin-top: 12px; }
+.activityForm { display: grid; gap: 0; margin-top: 8px; }
+.activityForm label { margin-bottom: 16px !important; }
+.page textarea { resize: vertical; min-height: 76px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 11px 12px; color: var(--pb-ink); background: rgba(255, 255, 255, 0.55); font: inherit; line-height: 1.5; }
+.page textarea:focus-visible { outline: 3px solid var(--pb-red); outline-offset: 3px; }
+.activityList { display: grid; gap: 10px; margin: 20px 0 6px; padding-top: 18px; border-top: 3px dashed rgba(30, 28, 26, 0.35); }
+.activityList > p { margin: 0; color: var(--pb-muted); font-size: 12px; }
+.activityItem { display: grid; gap: 5px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 11px 12px; background: rgba(255, 255, 255, 0.45); box-shadow: 3px 3px 0 var(--pb-ink); }
+.activityItem > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.activityItem strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.activityItem span, .activityItem small { color: var(--pb-muted); font-size: 10px; line-height: 1.5; }
+.activityItem small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .dashboardHead { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(520px, 1.1fr); align-items: end; gap: 40px; padding-bottom: 38px; }
 .eventBlock h1 { overflow-wrap: anywhere; margin: 14px 0 12px; font-size: clamp(40px, 5.4vw, 82px); line-height: 0.96; }

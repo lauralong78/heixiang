@@ -6,6 +6,7 @@ import styles from "../progress-board/progress-board.module.css";
 
 type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
+type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string };
 
 function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
@@ -24,6 +25,10 @@ export function FormalAuthApp() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [user, setUser] = useState<PublicUser | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activityTitle, setActivityTitle] = useState("");
+  const [activityDescription, setActivityDescription] = useState("");
+  const [activityMessage, setActivityMessage] = useState("");
   const [message, setMessage] = useState("正在检查登录状态…");
   const [busy, setBusy] = useState(true);
 
@@ -49,6 +54,23 @@ export function FormalAuthApp() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    fetch("/api/formal-board/activities", { cache: "no-store" })
+      .then(async (response) => ({ response, payload: await response.json() as unknown }))
+      .then(({ response, payload }) => {
+        if (!response.ok) {
+          setActivityMessage(extractMessage(payload, "活动暂时无法读取。"));
+          return;
+        }
+        const data = (payload as { data?: { activities?: Activity[] } }).data;
+        setActivities(data?.activities ?? []);
+      })
+      .catch(() => setActivityMessage("活动读取失败，请检查网络后重试。"));
+  }, [user]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,12 +114,37 @@ export function FormalAuthApp() {
         return;
       }
       setUser(null);
+      setActivities([]);
       setMode("login");
       setMessage("已退出登录。");
     } catch {
       setMessage("网络连接失败，退出状态未确认。请稍后重试。");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function createActivity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActivityMessage("正在创建活动…");
+    try {
+      const response = await fetch("/api/formal-board/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: activityTitle, description: activityDescription }),
+      });
+      const payload = await response.json() as unknown;
+      if (!response.ok) {
+        setActivityMessage(extractMessage(payload, "活动创建失败，请稍后重试。"));
+        return;
+      }
+      const data = (payload as { data?: { activity?: Activity } }).data;
+      if (data?.activity) setActivities((current) => [data.activity as Activity, ...current]);
+      setActivityTitle("");
+      setActivityDescription("");
+      setActivityMessage("活动已创建，主持人权限已由服务器确认。");
+    } catch {
+      setActivityMessage("网络连接失败，活动没有被标记为已创建。");
     }
   }
 
@@ -121,7 +168,30 @@ export function FormalAuthApp() {
             <div className={styles.authStatus}>
               <span className={styles.formIndex}>01 / SESSION ACTIVE</span>
               <strong>欢迎回来，{user.loginId}</strong>
-              <p>你的正式版登录状态已由服务器确认。活动看板页面还在接入中。</p>
+              <p>你的正式版登录状态已由服务器确认。现在可以创建第一个共享活动。</p>
+              <form className={styles.activityForm} onSubmit={createActivity}>
+                <label>
+                  活动名称
+                  <input value={activityTitle} onChange={(event) => setActivityTitle(event.target.value)} placeholder="例如：周末黑客松" required />
+                </label>
+                <label>
+                  活动说明（可选）
+                  <textarea value={activityDescription} onChange={(event) => setActivityDescription(event.target.value)} placeholder="给队友看的简短说明" rows={3} />
+                </label>
+                <button className={styles.primaryButton} type="submit" disabled={busy}>
+                  <span>创建活动</span><b>↗</b>
+                </button>
+              </form>
+              <p className={styles.message} role="status" aria-live="polite">{activityMessage}</p>
+              <div className={styles.activityList}>
+                <span className={styles.formIndex}>02 / YOUR ACTIVITIES</span>
+                {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
+                  <article key={activity.id} className={styles.activityItem}>
+                    <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
+                    <small>{activity.description || "暂无说明"}</small>
+                  </article>
+                ))}
+              </div>
               <button type="button" className={styles.primaryButton} onClick={logout} disabled={busy}>
                 <span>{busy ? "退出中…" : "退出登录"}</span><b>↗</b>
               </button>
