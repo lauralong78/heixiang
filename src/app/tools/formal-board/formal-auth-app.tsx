@@ -7,6 +7,7 @@ import styles from "../progress-board/progress-board.module.css";
 type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
 type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string };
+type Team = { id: string; name: string; description: string; task_count: number; sort_order: number };
 
 function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
@@ -26,6 +27,11 @@ export function FormalAuthApp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [user, setUser] = useState<PublicUser | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamName, setTeamName] = useState("");
+  const [teamDescription, setTeamDescription] = useState("");
+  const [teamMessage, setTeamMessage] = useState("");
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
   const [activityMessage, setActivityMessage] = useState("");
@@ -71,6 +77,24 @@ export function FormalAuthApp() {
       })
       .catch(() => setActivityMessage("活动读取失败，请检查网络后重试。"));
   }, [user]);
+
+  useEffect(() => {
+    if (!selectedActivityId) {
+      return;
+    }
+    fetch(`/api/formal-board/teams?activityId=${encodeURIComponent(selectedActivityId)}`, { cache: "no-store" })
+      .then(async (response) => ({ response, payload: await response.json() as unknown }))
+      .then(({ response, payload }) => {
+        if (!response.ok) {
+          setTeamMessage(extractMessage(payload, "队伍暂时无法读取。"));
+          return;
+        }
+        const data = (payload as { data?: { teams?: Team[] } }).data;
+        setTeams(data?.teams ?? []);
+        setTeamMessage("");
+      })
+      .catch(() => setTeamMessage("队伍读取失败，请检查网络后重试。"));
+  }, [selectedActivityId]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,6 +145,8 @@ export function FormalAuthApp() {
       }
       setUser(null);
       setActivities([]);
+      setSelectedActivityId(null);
+      setTeams([]);
       setMode("login");
       setMessage("已退出登录。");
     } catch {
@@ -151,6 +177,31 @@ export function FormalAuthApp() {
       setActivityMessage("活动已创建，主持人权限已由服务器确认。");
     } catch {
       setActivityMessage("网络连接失败，活动没有被标记为已创建。");
+    }
+  }
+
+  async function createTeam(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedActivityId) return;
+    setTeamMessage("正在创建队伍…");
+    try {
+      const response = await fetch("/api/formal-board/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activityId: selectedActivityId, name: teamName, description: teamDescription }),
+      });
+      const payload = await response.json() as unknown;
+      if (!response.ok) {
+        setTeamMessage(extractMessage(payload, "队伍创建失败，请稍后重试。"));
+        return;
+      }
+      const data = (payload as { data?: { team?: Team } }).data;
+      if (data?.team) setTeams((current) => [...current, data.team as Team]);
+      setTeamName("");
+      setTeamDescription("");
+      setTeamMessage("队伍已创建，写入权限由服务器确认。");
+    } catch {
+      setTeamMessage("网络连接失败，队伍没有被标记为已创建。");
     }
   }
 
@@ -192,12 +243,24 @@ export function FormalAuthApp() {
               <div className={styles.activityList}>
                 <span className={styles.formIndex}>02 / YOUR ACTIVITIES</span>
                 {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
-                  <article key={activity.id} className={styles.activityItem}>
+                  <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => setSelectedActivityId(activity.id)}>
                     <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
                     <small>{activity.description || "暂无说明"}</small>
-                  </article>
+                  </button>
                 ))}
               </div>
+              {selectedActivityId && (
+                <div className={styles.teamPanel}>
+                  <span className={styles.formIndex}>03 / TEAMS</span>
+                  <form className={styles.activityForm} onSubmit={createTeam}>
+                    <label>队伍名称<input value={teamName} onChange={(event) => setTeamName(event.target.value)} placeholder="例如：蓝队" required /></label>
+                    <label>队伍说明（可选）<input value={teamDescription} onChange={(event) => setTeamDescription(event.target.value)} placeholder="队伍负责什么" /></label>
+                    <button className={styles.primaryButton} type="submit"><span>创建队伍</span><b>↗</b></button>
+                  </form>
+                  <p className={styles.message} role="status" aria-live="polite">{teamMessage}</p>
+                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <div className={styles.teamItem} key={team.id}><strong>{team.name}</strong><span>{team.task_count} 个任务</span></div>)}
+                </div>
+              )}
               <button type="button" className={styles.primaryButton} onClick={logout} disabled={busy}>
                 <span>{busy ? "退出中…" : "退出登录"}</span><b>↗</b>
               </button>
