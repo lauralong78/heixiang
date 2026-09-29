@@ -2,10 +2,10 @@ import "server-only";
 
 import { supabaseRestRpc } from "./supabase-rest";
 
-export type TeamRow = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number };
+export type TeamRow = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number; team_role?: "captain" | "member" };
 
 export function listTeams(userId: string, activityId: string) {
-  return supabaseRestRpc<TeamRow[]>("formal_list_activity_teams_v2", {
+  return supabaseRestRpc<TeamRow[]>("formal_list_activity_teams_v3", {
     p_user_id: userId,
     p_activity_id: activityId,
   });

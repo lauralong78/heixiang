@@ -4,7 +4,7 @@ import { newRequestId } from "@/lib/server/formal-board/auth-service";
 import { makeApiFailure } from "@/lib/server/formal-board/contracts";
 import { FORMAL_BOARD_SESSION_COOKIE } from "@/lib/server/formal-board/session";
 import { getCurrentUserFromToken } from "@/lib/server/formal-board/session-service";
-import { createTask, listTasks, updateTaskProgress, updateTaskStatus } from "@/lib/server/formal-board/task-service";
+import { createTask, listTasks, updateTaskDetails, updateTaskProgress, updateTaskStatus } from "@/lib/server/formal-board/task-service";
 import { parseTaskInput, TaskInputError } from "@/lib/server/formal-board/task";
 import { SupabaseRestError } from "@/lib/server/formal-board/supabase-rest";
 
@@ -56,6 +56,13 @@ export async function PATCH(request: Request) {
     const status = typeof body.status === "string" ? body.status : "";
     const progress = typeof body.progress === "number" ? body.progress : null;
     const version = typeof body.expectedVersion === "number" ? body.expectedVersion : -1;
+    if (typeof body.title === "string" || typeof body.description === "string") {
+      const title = typeof body.title === "string" ? body.title.trim() : "";
+      const description = typeof body.description === "string" ? body.description.trim() : "";
+      if (!title || title.length > 200 || description.length > 8000 || !ids[0] || !ids[1] || version < 1) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "任务信息或版本无效。"), { status: 400 });
+      const task = await updateTaskDetails({ userId: current.user.id, activityId: ids[0], taskId: ids[1], title, description, expectedVersion: version, requestId });
+      return Response.json({ ok: true, data: { task }, requestId });
+    }
     if (!ids[0] || !ids[1] || !["todo", "doing", "done"].includes(status) || version < 1 || (progress !== null && (!Number.isInteger(progress) || progress < 0 || progress > 100))) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "任务状态、进度或版本无效。"), { status: 400 });
     const task = progress === null
       ? await updateTaskStatus({ userId: current.user.id, activityId: ids[0], taskId: ids[1], status, expectedVersion: version, requestId })

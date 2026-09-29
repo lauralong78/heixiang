@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
 import { newRequestId } from "@/lib/server/formal-board/auth-service";
-import { createInvite, revokeInvite } from "@/lib/server/formal-board/invite-service";
+import { createScopedInvite, revokeInvite } from "@/lib/server/formal-board/invite-service";
 import { isUuid } from "@/lib/server/formal-board/team";
 import { makeApiFailure } from "@/lib/server/formal-board/contracts";
 import { FORMAL_BOARD_SESSION_COOKIE } from "@/lib/server/formal-board/session";
@@ -20,11 +20,15 @@ export async function POST(request: Request) {
     if (!current) return Response.json(makeApiFailure(requestId, "UNAUTHENTICATED", "请先登录。"), { status: 401 });
     const body = await request.json() as Record<string, unknown>;
     const activityId = typeof body.activityId === "string" ? body.activityId : "";
-    const role = body.role === "member" ? "member" : "collaborator";
+    const inviteType = body.inviteType === "team_member" ? "team_member" : "activity_team";
+    const teamId = typeof body.teamId === "string" ? body.teamId : null;
+    const teamName = typeof body.teamName === "string" ? body.teamName.trim() : null;
     const maxUses = typeof body.maxUses === "number" && Number.isInteger(body.maxUses) ? body.maxUses : 50;
     const expiresAt = typeof body.expiresAt === "string" && body.expiresAt.trim() ? body.expiresAt : null;
     if (!isUuid(activityId) || maxUses < 1 || maxUses > 500 || (expiresAt && Number.isNaN(Date.parse(expiresAt)))) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "邀请参数无效。"), { status: 400 });
-    const result = await createInvite({ userId: current.user.id, activityId, role, expiresAt, maxUses, requestId });
+    if (inviteType === "team_member" && !isUuid(teamId ?? "")) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "队伍标识无效。"), { status: 400 });
+    if (inviteType === "activity_team" && (!teamName || teamName.length > 120)) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "请填写队伍名称。"), { status: 400 });
+    const result = await createScopedInvite({ userId: current.user.id, activityId, inviteType, teamId, teamName, expiresAt, maxUses, requestId });
     return Response.json({ ok: true, data: result, requestId }, { status: 201 });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.status === 403) return Response.json(makeApiFailure(requestId, "FORBIDDEN", "只有主持人可以生成邀请。"), { status: 403 });

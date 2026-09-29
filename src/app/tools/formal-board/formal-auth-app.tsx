@@ -7,8 +7,9 @@ import styles from "../progress-board/progress-board.module.css";
 type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
 type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string; data_version?: number; deadline_at?: string | null };
-type Team = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number };
+type Team = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number; team_role?: "captain" | "member" };
 type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number };
+type TeamMember = { membership_id: string; user_id: string; display_name: string; role: string };
 type ActivityStats = { total: number; doing: number; done: number; progress: number };
 
 function extractMessage(payload: unknown, fallback: string) {
@@ -33,12 +34,15 @@ export function FormalAuthApp() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [activityStats, setActivityStats] = useState<ActivityStats>({ total: 0, doing: 0, done: 0, progress: 0 });
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskMessage, setTaskMessage] = useState("");
-  const [teamName, setTeamName] = useState("");
-  const [teamDescription, setTeamDescription] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editTaskTitle, setEditTaskTitle] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [editTaskAssignees, setEditTaskAssignees] = useState<string[]>([]);
   const [teamMessage, setTeamMessage] = useState("");
   const [activityTitle, setActivityTitle] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
@@ -52,6 +56,7 @@ export function FormalAuthApp() {
   const [inviteTokenInput, setInviteTokenInput] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteLink, setInviteLink] = useState("");
+  const [inviteTeamName, setInviteTeamName] = useState("");
   const [message, setMessage] = useState("正在检查登录状态…");
   const [busy, setBusy] = useState(true);
   const [clock, setClock] = useState(() => Date.now());
@@ -286,14 +291,18 @@ export function FormalAuthApp() {
 
   async function createInvite() {
     if (!selectedActivityId) return;
+    const selectedTeam = teams.find((team) => team.id === selectedTeamId);
+    const inviteType = selectedTeam?.team_role === "captain" ? "team_member" : "activity_team";
+    if (inviteType === "activity_team" && !inviteTeamName.trim()) { setInviteMessage("请先填写要邀请进入活动的队伍名称。"); return; }
     setInviteMessage("正在生成邀请链接…");
     try {
-      const response = await fetch("/api/formal-board/invites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, role: "collaborator", maxUses: 50 }) });
+      const response = await fetch("/api/formal-board/invites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, inviteType, teamId: selectedTeam?.id ?? null, teamName: inviteType === "activity_team" ? inviteTeamName : null, maxUses: 50 }) });
       const payload = await response.json() as unknown;
       if (!response.ok) { setInviteMessage(extractMessage(payload, "邀请生成失败，请稍后重试。")); return; }
       const data = (payload as { data?: { token?: string } }).data;
       if (!data?.token) { setInviteMessage("服务器没有返回可用邀请，请稍后重试。"); return; }
       setInviteLink(`${window.location.origin}/tools/formal-board?invite=${encodeURIComponent(data.token)}`);
+      setInviteTeamName("");
       setInviteMessage("邀请链接已生成。请用私下渠道发送，不要公开发布。");
     } catch { setInviteMessage("网络连接失败，邀请状态未确认。请稍后重试。"); }
   }
@@ -302,31 +311,6 @@ export function FormalAuthApp() {
     if (!inviteLink) return;
     try { await navigator.clipboard.writeText(inviteLink); setInviteMessage("邀请链接已复制到剪贴板。"); }
     catch { setInviteMessage("浏览器拒绝访问剪贴板，请手动复制链接。" ); }
-  }
-
-  async function createTeam(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!selectedActivityId) return;
-    setTeamMessage("正在创建队伍…");
-    try {
-      const response = await fetch("/api/formal-board/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ activityId: selectedActivityId, name: teamName, description: teamDescription }),
-      });
-      const payload = await response.json() as unknown;
-      if (!response.ok) {
-        setTeamMessage(extractMessage(payload, "队伍创建失败，请稍后重试。"));
-        return;
-      }
-      const data = (payload as { data?: { team?: Team } }).data;
-      if (data?.team) setTeams((current) => [...current, { ...(data.team as Team), data_version: 1 }]);
-      setTeamName("");
-      setTeamDescription("");
-      setTeamMessage("队伍已创建，写入权限由服务器确认。");
-    } catch {
-      setTeamMessage("网络连接失败，队伍没有被标记为已创建。");
-    }
   }
 
   async function editTeam(team: Team) {
@@ -368,6 +352,34 @@ export function FormalAuthApp() {
     } catch { setTaskMessage("网络连接失败，任务没有被标记为已创建。"); }
   }
 
+  async function beginEditTask(task: Task) {
+    setEditingTaskId(task.id); setEditTaskTitle(task.title); setEditTaskDescription(task.description); setEditTaskAssignees([]); setTaskMessage("");
+    if (!selectedActivityId || !selectedTeamId) return;
+    try {
+      const response = await fetch(`/api/formal-board/task-assignees?activityId=${encodeURIComponent(selectedActivityId)}&teamId=${encodeURIComponent(selectedTeamId)}&taskId=${encodeURIComponent(task.id)}`, { cache: "no-store" });
+      const payload = await response.json() as { data?: { members?: TeamMember[]; membershipIds?: string[] } };
+      if (response.ok) { setTeamMembers(payload.data?.members ?? []); setEditTaskAssignees(payload.data?.membershipIds ?? []); }
+    } catch { setTaskMessage("队伍成员读取失败，任务内容仍可编辑。" ); }
+  }
+
+  async function saveTaskEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedActivityId || !editingTaskId) return;
+    const task = tasks.find((item) => item.id === editingTaskId);
+    if (!task) return;
+    setTaskMessage("正在保存任务…");
+    try {
+      const response = await fetch("/api/formal-board/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, taskId: task.id, title: editTaskTitle, description: editTaskDescription, expectedVersion: task.data_version }) });
+      const payload = await response.json() as unknown;
+      if (!response.ok) { setTaskMessage(extractMessage(payload, "任务修改失败，请确认你是队长并刷新后重试。")); return; }
+      const data = (payload as { data?: { task?: Task } }).data;
+      if (data?.task) setTasks((current) => current.map((item) => item.id === task.id ? data.task as Task : item));
+      const assignmentResponse = await fetch("/api/formal-board/task-assignees", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, taskId: task.id, membershipIds: editTaskAssignees }) });
+      if (!assignmentResponse.ok) { setTaskMessage("任务内容已更新，但负责人分配未确认，请重试分配。" ); return; }
+      setEditingTaskId(null); setTaskMessage("任务内容已更新。");
+    } catch { setTaskMessage("网络连接失败，任务修改状态未确认。请稍后重试。"); }
+  }
+
   async function changeTaskStatus(task: Task, status: Task["status"], progress = status === "done" ? 100 : status === "todo" ? 0 : task.progress) {
     if (!selectedActivityId) return;
     setTaskMessage("正在更新任务…");
@@ -382,6 +394,7 @@ export function FormalAuthApp() {
   }
 
   const selectedActivity = activities.find((activity) => activity.id === selectedActivityId);
+  const selectedTeam = teams.find((team) => team.id === selectedTeamId);
   const totalTaskCount = activityStats.total || teams.reduce((sum, team) => sum + team.task_count, 0);
   const completedTaskCount = tasks.filter((task) => task.status === "done").length;
   const activeTaskCount = tasks.filter((task) => task.status === "doing").length;
@@ -452,7 +465,8 @@ export function FormalAuthApp() {
                 <div className={styles.inviteActions}>
                   <input value={inviteTokenInput} onChange={(event) => setInviteTokenInput(event.target.value)} placeholder="粘贴邀请链接或邀请码" aria-label="邀请链接或邀请码" />
                   <button type="button" onClick={() => void joinActivity(inviteTokenInput)} disabled={!inviteTokenInput.trim()}>加入活动</button>
-                  {selectedActivity?.role === "host" && <button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>生成邀请链接</button>}
+                  {selectedActivity?.role === "host" && <><input value={inviteTeamName} onChange={(event) => setInviteTeamName(event.target.value)} placeholder="要邀请的队伍名称" aria-label="要邀请的队伍名称" /><button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>邀请队长入场</button></>}
+                  {selectedTeam?.team_role === "captain" && <button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>邀请队员入队</button>}
                 </div>
                 {inviteLink && <div className={styles.inviteLinkRow}><input readOnly value={inviteLink} aria-label="生成的邀请链接" /><button type="button" onClick={() => void copyInviteLink()}>复制链接</button></div>}
                 <p className={styles.message} role="status" aria-live="polite">{inviteMessage}</p>
@@ -512,11 +526,7 @@ export function FormalAuthApp() {
               {selectedActivityId && (
                 <div className={`${styles.teamPanel} ${styles.levelTeam}`}>
                   <div className={styles.levelHeading}><span className={styles.levelIndex}>02</span><div><span className={styles.formIndex}>第二层级 / TEAM</span><strong>队伍</strong></div></div>
-                  <form className={styles.activityForm} onSubmit={createTeam}>
-                    <label>队伍名称<input value={teamName} onChange={(event) => setTeamName(event.target.value)} placeholder="例如：蓝队" required /></label>
-                    <label>队伍说明（可选）<input value={teamDescription} onChange={(event) => setTeamDescription(event.target.value)} placeholder="队伍负责什么" /></label>
-                    <button className={styles.primaryButton} type="submit"><span>创建队伍</span><b>↗</b></button>
-                  </form>
+                  <p className={styles.authHint}>队伍由主持人邀请队长入场后自动创建；队长再从上方生成队员邀请。</p>
                   <p className={styles.message} role="status" aria-live="polite">{teamMessage}</p>
                   {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <div className={`${styles.teamItem} ${selectedTeamId === team.id ? styles.teamItemActive : ""}`} key={team.id} onClick={() => setSelectedTeamId(team.id)} role="button" tabIndex={0}><strong>{team.name}</strong><span>{team.task_count} 个任务</span><div className={styles.itemActions}><button type="button" onClick={(event) => { event.stopPropagation(); void editTeam(team); }}>编辑</button><button type="button" onClick={(event) => { event.stopPropagation(); void removeTeam(team); }}>删除</button></div></div>)}
                 </div>
@@ -530,7 +540,7 @@ export function FormalAuthApp() {
                     <button className={styles.primaryButton} type="submit"><span>创建任务</span><b>↗</b></button>
                   </form>
                   <p className={styles.message} role="status" aria-live="polite">{taskMessage}</p>
-                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><input className={styles.taskProgressInput} type="number" min="0" max="100" value={task.progress} onChange={(event) => changeTaskStatus(task, task.status, Number(event.target.value))} aria-label={`更新任务 ${task.title} 进度`} /><span>%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select></div>)}
+                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><input className={styles.taskProgressInput} type="number" min="0" max="100" value={task.progress} onChange={(event) => changeTaskStatus(task, task.status, Number(event.target.value))} aria-label={`更新任务 ${task.title} 进度`} /><span>%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select><div className={styles.taskItemActions}>{selectedTeam?.team_role === "captain" && <button type="button" onClick={() => void beginEditTask(task)}>编辑任务</button>}</div>{editingTaskId === task.id && <form className={styles.taskEditForm} onSubmit={saveTaskEdit}><label>任务标题<input value={editTaskTitle} onChange={(event) => setEditTaskTitle(event.target.value)} required /></label><label>任务说明<textarea value={editTaskDescription} onChange={(event) => setEditTaskDescription(event.target.value)} rows={3} /></label><fieldset className={styles.assigneeField}><legend>分配给队员（可多选）</legend>{teamMembers.filter((member) => member.role === "member").length === 0 ? <small>还没有队员，请先生成队员邀请。</small> : teamMembers.filter((member) => member.role === "member").map((member) => <label key={member.membership_id}><input type="checkbox" checked={editTaskAssignees.includes(member.membership_id)} onChange={(event) => setEditTaskAssignees((current) => event.target.checked ? [...current, member.membership_id] : current.filter((id) => id !== member.membership_id))} />{member.display_name}</label>)}</fieldset><div className={styles.activityEditActions}><button className={styles.primaryButton} type="submit"><span>保存任务</span><b>↗</b></button><button type="button" onClick={() => setEditingTaskId(null)}>取消</button></div></form>}</div>)}
                 </div>
               )}
               <p className={styles.authHint}>不要把浏览器 Cookie、密码或 Secret key 分享给任何人。</p>

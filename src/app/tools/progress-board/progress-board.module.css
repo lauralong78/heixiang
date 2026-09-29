@@ -176,6 +176,14 @@
 .taskItem strong { overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
 .taskItem span { color: var(--pb-muted); font-family: var(--font-geist-mono), monospace; font-size: 13px; }
 .taskItem select { padding: 9px 10px; font-size: 13px; }
+.taskItemActions { display: flex; gap: 6px; }
+.taskItemActions button { min-height: 34px; padding: 6px 9px; font-size: 12px; }
+.taskEditForm { display: grid; grid-column: 1 / -1; gap: 10px; padding-top: 14px; border-top: 2px dashed rgba(30, 28, 26, 0.32); }
+.taskEditForm label { display: grid; gap: 5px; font-size: 12px; font-weight: 800; }
+.assigneeField { display: grid; gap: 8px; border: 2px dashed rgba(30, 28, 26, 0.38); padding: 12px; }
+.assigneeField legend { padding: 0 5px; font-size: 12px; font-weight: 850; }
+.assigneeField label { display: flex; grid-template-columns: none; align-items: center; gap: 8px; font-weight: 700; }
+.assigneeField input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--pb-ink); }
 .taskProgressInput { width: 64px !important; margin-left: 14px; padding: 7px 8px !important; border-width: 2px !important; font-family: var(--font-geist-mono), monospace !important; font-size: 14px !important; font-weight: 800; }
 .deadlineText { display: block; margin-top: 10px; color: #5e6872; font-size: 14px; font-weight: 700; }
 .countdownText { display: block; margin-top: 5px; color: var(--pb-ink); font-family: var(--font-geist-mono), monospace; font-size: 18px; }

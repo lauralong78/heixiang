@@ -34,3 +34,12 @@ export async function updateTaskProgress(input: { userId: string; activityId: st
   if (!rows[0]) throw new Error("Task progress update returned no task.");
   return rows[0];
 }
+
+export async function updateTaskDetails(input: { userId: string; activityId: string; taskId: string; title: string; description: string; expectedVersion: number; requestId: string }) {
+  const rows = await supabaseRestRpc<TaskRow[]>("formal_update_task_details", {
+    p_user_id: input.userId, p_activity_id: input.activityId, p_task_id: input.taskId, p_title: input.title, p_description: input.description,
+    p_expected_version: input.expectedVersion, p_request_id: input.requestId,
+  });
+  if (!rows[0]) throw new Error("Task detail update returned no task.");
+  return rows[0];
+}
