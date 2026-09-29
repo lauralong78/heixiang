@@ -360,6 +360,12 @@ export function FormalAuthApp() {
   const activityDeadlineLabel = activityDeadline && !Number.isNaN(activityDeadline.getTime()) ? activityDeadline.toLocaleString("zh-CN", { hour12: false }) : "未设置截止时间";
   const remainingSeconds = activityDeadline && !Number.isNaN(activityDeadline.getTime()) ? Math.max(0, Math.floor((activityDeadline.getTime() - clock) / 1000)) : null;
   const remainingLabel = remainingSeconds === null ? "未设置倒计时" : remainingSeconds === 0 ? "已截止" : `${Math.floor(remainingSeconds / 86400)}天 ${String(Math.floor((remainingSeconds % 86400) / 3600)).padStart(2, "0")}时 ${String(Math.floor((remainingSeconds % 3600) / 60)).padStart(2, "0")}分`;
+  const countdownParts = remainingSeconds === null ? null : {
+    days: Math.floor(remainingSeconds / 86400),
+    hours: Math.floor((remainingSeconds % 86400) / 3600),
+    minutes: Math.floor((remainingSeconds % 3600) / 60),
+    seconds: remainingSeconds % 60,
+  };
 
   return (
     <main className={styles.page}>
@@ -392,6 +398,15 @@ export function FormalAuthApp() {
                   <strong>{selectedActivity?.status || "READY"}</strong>
                   <small>{selectedActivity ? "跨设备数据已连接" : "等待选择活动"}</small>
                 </div>
+                {selectedActivity && <div className={`${styles.formalCountdown} ${remainingSeconds === 0 ? styles.formalCountdownEnded : ""}`} aria-label="活动倒计时">
+                  <span className={styles.formalCountdownLabel}>TIME REMAINING</span>
+                  {countdownParts ? <div className={styles.formalClock}>
+                    <span><strong>{countdownParts.days}</strong><small>天</small></span>
+                    <span><strong>{String(countdownParts.hours).padStart(2, "0")}</strong><small>时</small></span>
+                    <span><strong>{String(countdownParts.minutes).padStart(2, "0")}</strong><small>分</small></span>
+                    <span><strong>{String(countdownParts.seconds).padStart(2, "0")}</strong><small>秒</small></span>
+                  </div> : <strong className={styles.formalCountdownEmpty}>{remainingLabel}</strong>}
+                </div>}
               </div>
               <div className={styles.dashboardActions}>
                 <button type="button" onClick={() => document.getElementById("formal-activity-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}>创建活动</button>
