@@ -212,6 +212,10 @@ export function FormalAuthApp() {
       setTeams([]);
       setSelectedTeamId(null);
       setTasks([]);
+      setInviteTokenInput("");
+      setInviteMessage("");
+      setInviteLink("");
+      setInviteTeamName("");
       setActivityStats({ total: 0, doing: 0, done: 0, progress: 0 });
       setMode("login");
       setMessage("已退出登录。");
@@ -520,7 +524,7 @@ export function FormalAuthApp() {
                   <div className={styles.levelHeading}><span className={styles.levelIndex}>01</span><div><span className={styles.formIndex}>最高层级 / ACTIVITY</span><strong>活动</strong></div></div>
                   {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
                     <div className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} key={activity.id}>
-                      <button type="button" className={styles.activitySelectButton} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
+                      <button type="button" className={styles.activitySelectButton} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); setInviteLink(""); setInviteMessage(""); setInviteTeamName(""); }}>
                         <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
                         <small>{activity.description || "暂无说明"}{activity.deadline_at ? ` · 截止 ${new Date(activity.deadline_at).toLocaleString("zh-CN", { hour12: false })}` : " · 未设置截止时间"}</small>
                       </button>
