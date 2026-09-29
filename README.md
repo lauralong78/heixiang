@@ -43,7 +43,7 @@ npm run dev
 - <http://localhost:3000/tools/formal-board>
 - <http://localhost:3000/tools/formal-vote-wall>
 
-不配置 Supabase 环境变量时，二者默认使用上述本机单实例模式；刷新同一浏览器页面后数据仍可从本机服务端恢复。
+二者默认使用上述本机单实例模式，即使 `.env.local` 里保留了旧的 Supabase 配置也不会切换；刷新同一浏览器页面后数据仍可从本机服务端恢复。只有以后明确设置 `FORMAL_BOARD_STORAGE_MODE=supabase`，才会启用云端 adapter。
 
 生产验证：
 
@@ -68,7 +68,7 @@ GITHUB_TOKEN=
 
 - `DEEPSEEK_API_KEY` 可选；当前八个可用工具均不依赖它。
 - `GITHUB_TOKEN` 可选，只用于提高公开 GitHub API 的服务端速率限额。
-- `SUPABASE_URL` 与服务端 Supabase Secret 均为可选的未来云端 adapter 配置；未同时配置时，正式进度看板和正式投票墙使用本机数据，不需要填写任何云端凭证。
+- `SUPABASE_URL` 与服务端 Supabase Secret 均为可选的未来云端 adapter 配置；正式进度看板和正式投票墙默认使用本机数据。只有明确设置 `FORMAL_BOARD_STORAGE_MODE=supabase` 时，才要求同时提供这两项服务端配置。
 - 变量都不能改成 `NEXT_PUBLIC_*`，也不能把真实值提交到仓库。
 
 ## 技术栈与结构
