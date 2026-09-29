@@ -3,6 +3,7 @@ import type {
   FormalBoardAction,
   FormalBoardRole,
   MembershipSnapshot,
+  FormalBoardMembershipStatus,
 } from "./contracts";
 
 const HOST_ACTIONS = new Set<FormalBoardAction>([
@@ -45,6 +46,14 @@ export function isAtLeastCollaborator(role: FormalBoardRole): boolean {
 
 export function canEditOwnContact(userId: string, targetUserId: string, membershipStatus: string): boolean {
   return userId === targetUserId && membershipStatus === "active";
+}
+
+export function canViewActivityAudit(role: FormalBoardRole | null, status: FormalBoardMembershipStatus | null): boolean {
+  return status === "active" && (role === "host" || role === "collaborator");
+}
+
+export function canDeleteAttachment(userId: string, uploadedBy: string, role: FormalBoardRole | null, status: FormalBoardMembershipStatus | null): boolean {
+  return status === "active" && (userId === uploadedBy || role === "host" || role === "collaborator");
 }
 
 export function canWriteBoardResource(context: AuthorizationContext, action: FormalBoardAction): boolean {

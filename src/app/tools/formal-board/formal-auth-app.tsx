@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "../progress-board/progress-board.module.css";
+import { FORMAL_BOARD_POLL_INTERVAL_MS, isCurrentPoll, syncLabel, type SyncState } from "@/lib/formal-board/polling";
 
 type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
@@ -11,6 +12,9 @@ type Team = { id: string; name: string; description: string; task_count: number;
 type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number; assigned_to_current_user?: boolean };
 type TeamMember = { membership_id: string; user_id: string; display_name: string; role: string };
 type ActivityStats = { total: number; doing: number; done: number; progress: number };
+type Contact = { value: string; visibility: "private" | "activity_members" };
+type AuditEvent = { id: string; action: string; target_type: string; target_id: string | null; request_id: string; result: string; created_at: string };
+type Attachment = { id: string; original_name: string; media_type: string; size_bytes: number; uploaded_by: string; created_at: string };
 
 function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
@@ -60,6 +64,67 @@ export function FormalAuthApp() {
   const [message, setMessage] = useState("正在检查登录状态…");
   const [busy, setBusy] = useState(true);
   const [clock, setClock] = useState(() => Date.now());
+  const [syncState, setSyncState] = useState<SyncState>("idle");
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [contact, setContact] = useState<Contact>({ value: "", visibility: "private" });
+  const [contactInput, setContactInput] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [auditMessage, setAuditMessage] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentMessage, setAttachmentMessage] = useState("");
+  const pollRequestRef = useRef(0);
+  const pollInFlightRef = useRef(false);
+
+  const refreshBoard = useCallback(async () => {
+    if (!user || pollInFlightRef.current) return;
+    pollInFlightRef.current = true;
+    const requestId = ++pollRequestRef.current;
+    setSyncState("syncing");
+    try {
+      const activityResponse = await fetch("/api/formal-board/activities", { cache: "no-store" });
+      const activityPayload = await activityResponse.json() as { data?: { activities?: Activity[] }; error?: { message?: string } };
+      if (!activityResponse.ok) throw new Error(activityPayload.error?.message || "活动读取失败。");
+      if (!isCurrentPoll(requestId, pollRequestRef.current)) return;
+      const nextActivities = activityPayload.data?.activities ?? [];
+      setActivities(nextActivities);
+      if (!selectedActivityId) {
+        setSyncState("synced"); setLastSyncedAt(new Date().toISOString()); return;
+      }
+      const teamResponse = await fetch(`/api/formal-board/teams?activityId=${encodeURIComponent(selectedActivityId)}`, { cache: "no-store" });
+      const teamPayload = await teamResponse.json() as { data?: { teams?: Team[] }; error?: { message?: string } };
+      if (!teamResponse.ok) throw new Error(teamPayload.error?.message || "队伍读取失败。");
+      const nextTeams = teamPayload.data?.teams ?? [];
+      const taskLists = await Promise.all(nextTeams.map(async (team) => {
+        const response = await fetch(`/api/formal-board/tasks?activityId=${encodeURIComponent(selectedActivityId)}&teamId=${encodeURIComponent(team.id)}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("任务读取失败。");
+        const payload = await response.json() as { data?: { tasks?: Task[] } };
+        return payload.data?.tasks ?? [];
+      }));
+      if (!isCurrentPoll(requestId, pollRequestRef.current)) return;
+      const allTasks = taskLists.flat();
+      setTeams(nextTeams);
+      setActivityStats({ total: allTasks.length, doing: allTasks.filter((task) => task.status === "doing").length, done: allTasks.filter((task) => task.status === "done").length, progress: allTasks.length ? Math.round(allTasks.reduce((sum, task) => sum + task.progress, 0) / allTasks.length) : 0 });
+      const selectedIndex = nextTeams.findIndex((team) => team.id === selectedTeamId);
+      setTasks(selectedIndex >= 0 ? taskLists[selectedIndex] : []);
+      setSyncState("synced");
+      setLastSyncedAt(new Date().toISOString());
+    } catch (error) {
+      if (isCurrentPoll(requestId, pollRequestRef.current)) {
+        setSyncState("failed");
+        setTeamMessage(error instanceof Error ? error.message : "同步失败，保留当前已知数据。");
+      }
+    } finally {
+      pollInFlightRef.current = false;
+    }
+  }, [selectedActivityId, selectedTeamId, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const kickoff = window.setTimeout(() => void refreshBoard(), 0);
+    const timer = window.setInterval(() => void refreshBoard(), FORMAL_BOARD_POLL_INTERVAL_MS);
+    return () => { window.clearTimeout(kickoff); window.clearInterval(timer); };
+  }, [refreshBoard, user]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(Date.now()), 1000);
@@ -115,6 +180,10 @@ export function FormalAuthApp() {
   }, [user]);
 
   useEffect(() => {
+    if (user) void loadPrivateSurfaces();
+  }, [user]);
+
+  useEffect(() => {
     if (!selectedActivityId) {
       return;
     }
@@ -158,6 +227,58 @@ export function FormalAuthApp() {
       })
       .catch(() => setTaskMessage("任务读取失败，请检查网络后重试。"));
   }, [selectedActivityId, selectedTeamId]);
+
+  async function loadPrivateSurfaces() {
+    try {
+      const response = await fetch("/api/formal-board/contact", { cache: "no-store" });
+      const payload = await response.json() as { data?: { contact?: Contact } };
+      if (response.ok && payload.data?.contact) { setContact(payload.data.contact); setContactInput(payload.data.contact.value); }
+    } catch { setContactMessage("联系方式读取失败，请稍后重试。"); }
+  }
+
+  async function saveContact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setContactMessage("正在保存联系方式…");
+    try {
+      const response = await fetch("/api/formal-board/contact", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value: contactInput }) });
+      const payload = await response.json() as { data?: { contact?: Contact }; error?: { message?: string } };
+      if (!response.ok) { setContactMessage(payload.error?.message || "联系方式保存失败，未标记为成功。"); return; }
+      if (payload.data?.contact) setContact(payload.data.contact);
+      setContactMessage(contactInput.trim() ? "联系方式已保存，仅本人可见。" : "联系方式已清空。未填写也不影响正常使用。");
+    } catch { setContactMessage("网络连接失败，联系方式保存状态未确认。"); }
+  }
+
+  async function loadAudit(activityId?: string) {
+    setAuditMessage("正在读取审计…");
+    try {
+      const response = await fetch(`/api/formal-board/audit${activityId ? `?activityId=${encodeURIComponent(activityId)}` : ""}`, { cache: "no-store" });
+      const payload = await response.json() as { data?: { events?: AuditEvent[] }; error?: { message?: string } };
+      if (!response.ok) { setAuditMessage(payload.error?.message || "没有权限读取审计。"); return; }
+      setAuditEvents(payload.data?.events ?? []); setAuditMessage("审计已按服务器权限过滤。");
+    } catch { setAuditMessage("审计读取失败，未显示不完整数据。"); }
+  }
+
+  async function loadAttachments(activityId: string) {
+    setAttachmentMessage("正在读取附件元数据…");
+    try {
+      const response = await fetch(`/api/formal-board/attachments?activityId=${encodeURIComponent(activityId)}`, { cache: "no-store" });
+      const payload = await response.json() as { data?: { attachments?: Attachment[] }; error?: { message?: string } };
+      if (!response.ok) { setAttachmentMessage(payload.error?.message || "附件读取失败。"); return; }
+      setAttachments(payload.data?.attachments ?? []); setAttachmentMessage("附件元数据已同步；文件内容仍受服务端授权保护。");
+    } catch { setAttachmentMessage("附件读取失败，未显示不完整数据。"); }
+  }
+
+  async function prepareAttachment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const input = event.currentTarget.elements.namedItem("attachment") as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file || !selectedActivityId) { setAttachmentMessage("请选择文件和活动。"); return; }
+    setAttachmentMessage("正在校验附件…");
+    try {
+      const response = await fetch("/api/formal-board/attachments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, name: file.name, mediaType: file.type, sizeBytes: file.size }) });
+      const payload = await response.json() as { error?: { message?: string } };
+      setAttachmentMessage(payload.error?.message || (response.ok ? "附件已准备。" : "附件未上传。"));
+    } catch { setAttachmentMessage("网络连接失败，附件未标记为上传成功。"); }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -470,9 +591,15 @@ export function FormalAuthApp() {
               </div>
               <div className={styles.dashboardActions}>
                 <button type="button" onClick={() => document.getElementById("formal-activity-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}>创建活动</button>
-                <button type="button" onClick={() => window.location.reload()}>刷新数据</button>
+                <button type="button" onClick={() => void refreshBoard()}>刷新数据</button>
                 <button type="button" className={styles.dashboardDanger} onClick={logout} disabled={busy}>退出登录</button>
               </div>
+              <p className={styles.authHint} role="status" aria-live="polite">数据同步：{syncLabel(syncState)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString("zh-CN")}` : ""}。每 8 秒检查一次；失败时保留当前已知数据，不会静默覆盖。</p>
+              <section className={styles.invitePanel} aria-label="可选联系方式">
+                <div><span className={styles.formIndex}>PRIVATE CONTACT / 可选联系方式</span><strong>联系方式（仅本人可见）</strong><p>不填也可正常使用；填写后不会公开给活动成员，也不会进入审计记录。当前：{contact.value ? "已填写" : "未填写"}。</p></div>
+                <form className={styles.inviteActions} onSubmit={saveContact}><input value={contactInput} onChange={(event) => setContactInput(event.target.value)} placeholder="例如：即时通讯 ID（可留空）" aria-label="可选联系方式" maxLength={240} /><button type="submit">保存 / 清空</button></form>
+                <p className={styles.message} role="status" aria-live="polite">{contactMessage}</p>
+              </section>
               <section className={styles.invitePanel} aria-label="邀请加入活动">
                 <div>
                   <span className={styles.formIndex}>JOIN / INVITE</span>
@@ -561,6 +688,14 @@ export function FormalAuthApp() {
                   {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong>{isCaptain || task.assigned_to_current_user ? <input className={styles.taskProgressInput} type="number" min="0" max="100" value={task.progress} onChange={(event) => changeTaskStatus(task, task.status, Number(event.target.value))} aria-label={`更新任务 ${task.title} 进度`} /> : <span className={styles.taskReadOnly}>{task.assigned_to_current_user ? "可更新" : "未分配给你"}</span>}<span>%</span></div>{isCaptain ? <select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select> : <span className={styles.taskReadOnly}>仅可改进度</span>}<div className={styles.taskItemActions}>{isCaptain && <button type="button" onClick={() => void beginEditTask(task)}>编辑任务</button>}</div>{editingTaskId === task.id && <form className={styles.taskEditForm} onSubmit={saveTaskEdit}><label>任务标题<input value={editTaskTitle} onChange={(event) => setEditTaskTitle(event.target.value)} required /></label><label>任务说明<textarea value={editTaskDescription} onChange={(event) => setEditTaskDescription(event.target.value)} rows={3} /></label><fieldset className={styles.assigneeField}><legend>分配给队员（可多选）</legend>{teamMembers.filter((member) => member.role === "member").length === 0 ? <small>还没有队员，请先生成队员邀请。</small> : teamMembers.filter((member) => member.role === "member").map((member) => <label key={member.membership_id}><input type="checkbox" checked={editTaskAssignees.includes(member.membership_id)} onChange={(event) => setEditTaskAssignees((current) => event.target.checked ? [...current, member.membership_id] : current.filter((id) => id !== member.membership_id))} />{member.display_name}</label>)}</fieldset><div className={styles.activityEditActions}><button className={styles.primaryButton} type="submit"><span>保存任务</span><b>↗</b></button><button type="button" onClick={() => setEditingTaskId(null)}>取消</button></div></form>}</div>)}
                 </div>
               )}
+              <section className={styles.invitePanel} aria-label="审计与附件">
+                <div><span className={styles.formIndex}>AUDIT / ATTACHMENTS</span><strong>操作记录与附件</strong><p>个人安全记录始终按本人过滤；活动记录仅向协作者/主持人开放。附件只展示成员可见的元数据。</p></div>
+                <div className={styles.dashboardActions}><button type="button" onClick={() => void loadAudit()}>查看我的安全记录</button>{selectedActivityId && <button type="button" onClick={() => void loadAudit(selectedActivityId)}>查看本活动操作记录</button>}{selectedActivityId && <button type="button" onClick={() => void loadAttachments(selectedActivityId)}>刷新附件列表</button>}</div>
+                <p className={styles.message} role="status" aria-live="polite">{auditMessage || attachmentMessage}</p>
+                {auditEvents.length > 0 && <ul><li>最近记录（{auditEvents.length} 条，敏感字段已排除）</li>{auditEvents.slice(0, 5).map((event) => <li key={event.id}>{event.action} · {event.result} · {new Date(event.created_at).toLocaleString("zh-CN")}</li>)}</ul>}
+                {selectedActivityId && <form className={styles.inviteActions} onSubmit={prepareAttachment}><input name="attachment" type="file" accept="image/png,image/jpeg,application/pdf,text/plain" aria-label="选择附件" /><button type="submit">校验附件（未上传）</button></form>}
+                {attachments.length > 0 && <ul><li>附件元数据（{attachments.length} 条）</li>{attachments.map((item) => <li key={item.id}>{item.original_name} · {item.media_type} · {Math.ceil(item.size_bytes / 1024)} KiB</li>)}</ul>}
+              </section>
               <p className={styles.authHint}>不要把浏览器 Cookie、密码或 Secret key 分享给任何人。</p>
             </div>
           ) : (
