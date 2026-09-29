@@ -23,10 +23,17 @@ export const FORMAL_BOARD_ACTIONS = [
   "task.delete",
   "attachment.upload",
   "attachment.delete",
+  "poll.create",
+  "poll.update",
+  "poll.close",
+  "poll.option.create",
+  "poll.option.update",
+  "vote.cast",
+  "vote.void",
 ] as const;
 export type FormalBoardAction = (typeof FORMAL_BOARD_ACTIONS)[number];
 
-export type FormalBoardResource = "activity" | "membership" | "team" | "task" | "attachment";
+export type FormalBoardResource = "activity" | "membership" | "team" | "task" | "attachment" | "poll" | "poll_option" | "vote";
 
 export type MembershipSnapshot = {
   role: FormalBoardRole;
