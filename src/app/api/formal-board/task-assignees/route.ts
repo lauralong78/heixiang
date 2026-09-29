@@ -6,6 +6,8 @@ import { isUuid } from "@/lib/server/formal-board/team";
 import { FORMAL_BOARD_SESSION_COOKIE } from "@/lib/server/formal-board/session";
 import { getCurrentUserFromToken } from "@/lib/server/formal-board/session-service";
 import { supabaseRestRpc } from "@/lib/server/formal-board/supabase-rest";
+import { isLocalFormalBoard } from "@/lib/server/formal-board/storage";
+import { localAssignTaskMembers, localTeamMembers } from "@/lib/server/formal-board/local-store";
 
 async function currentUser() {
   const token = (await cookies()).get(FORMAL_BOARD_SESSION_COOKIE)?.value;
@@ -22,6 +24,7 @@ export async function GET(request: Request) {
     const taskId = query.get("taskId") ?? "";
     if (!current) return Response.json(makeApiFailure(requestId, "UNAUTHENTICATED", "请先登录。"), { status: 401 });
     if (![activityId, teamId, taskId].every(isUuid)) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "活动、队伍或任务标识无效。"), { status: 400 });
+    if (isLocalFormalBoard()) return Response.json({ ok: true, data: localTeamMembers(current.user.id, activityId, teamId, taskId), requestId });
     const [members, assignees] = await Promise.all([
       supabaseRestRpc<Array<{ membership_id: string; user_id: string; display_name: string; role: string }>>("formal_list_team_members", { p_user_id: current.user.id, p_activity_id: activityId, p_team_id: teamId }),
       supabaseRestRpc<Array<{ membership_id: string }>>("formal_list_task_assignees", { p_user_id: current.user.id, p_activity_id: activityId, p_team_id: teamId, p_task_id: taskId }),
@@ -40,6 +43,7 @@ export async function PUT(request: Request) {
     const taskId = typeof body.taskId === "string" ? body.taskId : "";
     const membershipIds = Array.isArray(body.membershipIds) ? body.membershipIds.filter((item): item is string => typeof item === "string") : [];
     if (![activityId, taskId].every(isUuid) || membershipIds.some((item) => !isUuid(item))) return Response.json(makeApiFailure(requestId, "INVALID_INPUT", "任务或成员标识无效。"), { status: 400 });
+    if (isLocalFormalBoard()) return Response.json({ ok: true, data: localAssignTaskMembers(current.user.id, activityId, taskId, membershipIds, requestId), requestId });
     await supabaseRestRpc("formal_assign_task_members", { p_user_id: current.user.id, p_activity_id: activityId, p_task_id: taskId, p_membership_ids: membershipIds, p_request_id: requestId });
     return Response.json({ ok: true, data: { assigned: membershipIds.length }, requestId });
   } catch { return Response.json(makeApiFailure(requestId, "FORBIDDEN", "只有队长可以分配任务，或成员不属于当前队伍。"), { status: 403 }); }

@@ -3,6 +3,8 @@ import "server-only";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 import { getSupabaseRestConfig, supabaseRestRequest } from "./supabase-rest";
+import { isLocalFormalBoard } from "./storage";
+import { localContact, localSetContact } from "./local-store";
 
 type ContactRow = { id: string; contact_value_encrypted: string | null; contact_visibility: "private" | "activity_members" };
 
@@ -39,12 +41,14 @@ export function validateContact(value: unknown) {
 }
 
 export async function getOwnContact(userId: string) {
+  if (isLocalFormalBoard()) return localContact(userId);
   const rows = await supabaseRestRequest<ContactRow[]>(`app_users?id=eq.${encodeURIComponent(userId)}&select=id,contact_value_encrypted,contact_visibility`);
   const row = rows[0];
   return { value: decryptContact(row?.contact_value_encrypted ?? null), visibility: row?.contact_visibility ?? "private" as const };
 }
 
 export async function setOwnContact(userId: string, value: string) {
+  if (isLocalFormalBoard()) return localSetContact(userId, value);
   const rows = await supabaseRestRequest<ContactRow[]>(`app_users?id=eq.${encodeURIComponent(userId)}&select=id,contact_value_encrypted,contact_visibility`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },

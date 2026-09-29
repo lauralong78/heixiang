@@ -3,6 +3,8 @@ import "server-only";
 import { supabaseRestRequest } from "./supabase-rest";
 import { canDeleteAttachment } from "./permissions";
 import type { FormalBoardMembershipStatus, FormalBoardRole } from "./contracts";
+import { isLocalFormalBoard } from "./storage";
+import { localAttachments } from "./local-store";
 
 export type AttachmentRow = { id: string; activity_id: string; team_id: string | null; task_id: string | null; uploaded_by: string; original_name: string; media_type: string; size_bytes: number; sha256: string; status: string; created_at: string };
 type MembershipRow = { role: FormalBoardRole; status: FormalBoardMembershipStatus };
@@ -13,6 +15,7 @@ async function membership(userId: string, activityId: string) {
 }
 
 export async function listAttachments(userId: string, activityId: string) {
+  if (isLocalFormalBoard()) return localAttachments(userId, activityId);
   if (!await membership(userId, activityId)) throw new Error("FORBIDDEN");
   return supabaseRestRequest<AttachmentRow[]>(`attachments?activity_id=eq.${encodeURIComponent(activityId)}&status=eq.active&select=id,activity_id,team_id,task_id,uploaded_by,original_name,media_type,size_bytes,sha256,status,created_at&order=created_at.desc`);
 }

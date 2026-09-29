@@ -2,6 +2,8 @@ import "server-only";
 
 import { supabaseRestRequest, supabaseRestRpc } from "./supabase-rest";
 import { digestSessionToken } from "./session";
+import { isLocalFormalBoard } from "./storage";
+import { localCurrent, localRevoke } from "./local-store";
 
 type SessionRow = {
   user_id: string;
@@ -17,6 +19,7 @@ type UserRow = {
 };
 
 export async function getCurrentUserFromToken(token: string) {
+  if (isLocalFormalBoard()) return localCurrent(token);
   const sessions = await supabaseRestRequest<SessionRow[]>(
     `app_sessions?select=user_id,expires_at,revoked_at&token_digest=eq.${encodeURIComponent(digestSessionToken(token))}&limit=1`,
   );
@@ -32,6 +35,7 @@ export async function getCurrentUserFromToken(token: string) {
 }
 
 export async function revokeSession(token: string, requestId: string) {
+  if (isLocalFormalBoard()) { localRevoke(token, requestId); return; }
   await supabaseRestRpc("formal_revoke_session", {
     p_token_digest: digestSessionToken(token),
     p_request_id: requestId,

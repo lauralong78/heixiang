@@ -4,6 +4,8 @@ import { randomBytes } from "node:crypto";
 
 import { digestSessionToken } from "./session";
 import { supabaseRestRpc } from "./supabase-rest";
+import { isLocalFormalBoard } from "./storage";
+import { localCreateInvite, localJoinInvite, localRevokeInvite } from "./local-store";
 
 export type InviteRow = { id: string; activity_id: string; token_hint: string; role: string; expires_at: string | null; max_uses: number; use_count: number; status: string };
 export type JoinRow = { activity_id: string; membership_id: string; role: string; already_joined: boolean; team_id: string; invite_type: string };
@@ -15,6 +17,7 @@ export function createInviteToken() {
 
 export async function createInvite(input: { userId: string; activityId: string; role: "member" | "collaborator"; expiresAt: string | null; maxUses: number; requestId: string }) {
   const token = createInviteToken();
+  if (isLocalFormalBoard()) return { invite: localCreateInvite({ ...input, tokenDigest: token.digest, tokenHint: token.hint }), token: token.token };
   const rows = await supabaseRestRpc<InviteRow[]>("formal_create_activity_invite", {
     p_user_id: input.userId, p_activity_id: input.activityId, p_token_digest: token.digest, p_token_hint: token.hint,
     p_role: input.role, p_expires_at: input.expiresAt, p_max_uses: input.maxUses, p_request_id: input.requestId,
@@ -25,6 +28,7 @@ export async function createInvite(input: { userId: string; activityId: string; 
 
 export async function createScopedInvite(input: { userId: string; activityId: string; inviteType: "activity_team" | "team_member"; teamId?: string | null; teamName?: string | null; expiresAt: string | null; maxUses: number; requestId: string }) {
   const token = createInviteToken();
+  if (isLocalFormalBoard()) return { invite: localCreateInvite({ userId: input.userId, activityId: input.activityId, role: "member", expiresAt: input.expiresAt, maxUses: input.maxUses, tokenDigest: token.digest, tokenHint: token.hint, requestId: input.requestId }), token: token.token };
   const rows = await supabaseRestRpc<InviteRow[]>("formal_create_activity_invite_v2", {
     p_user_id: input.userId, p_activity_id: input.activityId, p_invite_type: input.inviteType, p_team_id: input.teamId ?? null, p_team_name: input.teamName ?? null,
     p_token_digest: token.digest, p_token_hint: token.hint, p_expires_at: input.expiresAt, p_max_uses: input.maxUses, p_request_id: input.requestId,
@@ -34,9 +38,11 @@ export async function createScopedInvite(input: { userId: string; activityId: st
 }
 
 export function joinInvite(input: { userId: string; token: string; requestId: string }) {
+  if (isLocalFormalBoard()) return Promise.resolve(localJoinInvite({ userId: input.userId, tokenDigest: digestSessionToken(input.token), requestId: input.requestId }));
   return supabaseRestRpc<JoinRow[]>("formal_join_activity_invite_v2", { p_user_id: input.userId, p_token_digest: digestSessionToken(input.token), p_request_id: input.requestId });
 }
 
 export function revokeInvite(input: { userId: string; inviteId: string; requestId: string }) {
+  if (isLocalFormalBoard()) return Promise.resolve(localRevokeInvite(input));
   return supabaseRestRpc<unknown[]>("formal_revoke_activity_invite", { p_user_id: input.userId, p_invite_id: input.inviteId, p_request_id: input.requestId });
 }

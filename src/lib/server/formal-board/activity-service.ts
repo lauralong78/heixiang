@@ -1,6 +1,8 @@
 import "server-only";
 
 import { supabaseRestRpc } from "./supabase-rest";
+import { isLocalFormalBoard } from "./storage";
+import { localCreateActivity, localListActivities, localUpdateActivity } from "./local-store";
 
 export type ActivityRow = {
   id: string;
@@ -14,6 +16,7 @@ export type ActivityRow = {
 };
 
 export async function createActivity(input: { userId: string; title: string; description: string; requestId: string }) {
+  if (isLocalFormalBoard()) return localCreateActivity(input);
   const rows = await supabaseRestRpc<ActivityRow[]>("formal_create_activity", {
     p_creator_id: input.userId,
     p_title: input.title,
@@ -25,10 +28,12 @@ export async function createActivity(input: { userId: string; title: string; des
 }
 
 export function listActivities(userId: string) {
+  if (isLocalFormalBoard()) return Promise.resolve(localListActivities(userId));
   return supabaseRestRpc<ActivityRow[]>("formal_list_accessible_activities_v2", { p_user_id: userId });
 }
 
 export async function createActivityWithDeadline(input: { userId: string; title: string; description: string; deadlineAt?: string | null; requestId: string }) {
+  if (isLocalFormalBoard()) return localCreateActivity(input);
   const rows = await supabaseRestRpc<ActivityRow[]>("formal_create_activity_v2", {
     p_creator_id: input.userId, p_title: input.title, p_description: input.description,
     p_deadline_at: input.deadlineAt ?? null, p_request_id: input.requestId,
@@ -38,6 +43,7 @@ export async function createActivityWithDeadline(input: { userId: string; title:
 }
 
 export async function updateActivity(input: { userId: string; activityId: string; title: string; description: string; deadlineAt?: string | null; status: string; expectedVersion: number; requestId: string }) {
+  if (isLocalFormalBoard()) return localUpdateActivity(input);
   const rows = await supabaseRestRpc<ActivityRow[]>("formal_update_activity", {
     p_user_id: input.userId, p_activity_id: input.activityId, p_title: input.title, p_description: input.description,
     p_deadline_at: input.deadlineAt ?? null, p_status: input.status, p_expected_version: input.expectedVersion, p_request_id: input.requestId,

@@ -561,8 +561,8 @@ export function FormalAuthApp() {
         <div className={styles.setupIntro}>
           <span className={styles.kicker}>黑箱正式版 · HK-300</span>
           <h1>把进度，<br />放到同一个地方。</h1>
-          <p>跨设备登录后，活动、队伍和任务才会真正属于你。这里是正式版入口；原来的本机演示仍然独立保留。</p>
-          <p className={styles.authHint}>第一阶段仅支持桌面浏览器。账号使用自选唯一 ID 和密码，密码不会出现在页面响应里。</p>
+          <p>当前为本机单实例：账号、活动、队伍和任务保存在本机服务端，不支持跨设备或公开互联网协作。未来配置 Supabase 后才可切换到云端 adapter。</p>
+          <p className={styles.authHint}>第一阶段仅支持桌面浏览器。账号使用自选唯一 ID 和密码，密码不会出现在页面响应里；本机模式仍实际使用服务端 session 与权限检查。</p>
         </div>
 
         <div className={user ? styles.dashboardShell : styles.setupForm}>

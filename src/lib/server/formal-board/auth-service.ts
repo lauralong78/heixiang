@@ -5,10 +5,13 @@ import { randomUUID } from "node:crypto";
 import { hashPassword, verifyPassword } from "./password";
 import { createSessionToken, digestSessionToken } from "./session";
 import { supabaseRestRequest, supabaseRestRpc } from "./supabase-rest";
+import { isLocalFormalBoard } from "./storage";
+import { localLogin, localRegister } from "./local-store";
 
 type UserRow = { id: string; login_id: string; status: string; created_at: string; password_hash: string };
 
 export async function registerWithCredentials(credentials: { loginId: string; password: string }, requestId: string) {
+  if (isLocalFormalBoard()) return { user: await localRegister(credentials.loginId, credentials.password) };
   const passwordHash = await hashPassword(credentials.password);
   const rows = await supabaseRestRpc<Array<Omit<UserRow, "password_hash">>>("formal_register_user", {
     p_login_id: credentials.loginId,
@@ -21,6 +24,7 @@ export async function registerWithCredentials(credentials: { loginId: string; pa
 }
 
 export async function loginWithCredentials(credentials: { loginIdNormalized: string; password: string }, requestId: string) {
+  if (isLocalFormalBoard()) return localLogin(credentials.loginIdNormalized, credentials.password, requestId);
   const query = new URLSearchParams({
     select: "id,login_id,status,created_at,password_hash",
     login_id_normalized: `eq.${credentials.loginIdNormalized}`,
