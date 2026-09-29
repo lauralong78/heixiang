@@ -17,7 +17,7 @@ export function createInviteToken() {
 
 export async function createInvite(input: { userId: string; activityId: string; role: "member" | "collaborator"; expiresAt: string | null; maxUses: number; requestId: string }) {
   const token = createInviteToken();
-  if (isLocalFormalBoard()) return { invite: localCreateInvite({ ...input, tokenDigest: token.digest, tokenHint: token.hint }), token: token.token };
+  if (isLocalFormalBoard()) return { invite: localCreateInvite({ ...input, inviteType: "activity_team", tokenDigest: token.digest, tokenHint: token.hint }), token: token.token };
   const rows = await supabaseRestRpc<InviteRow[]>("formal_create_activity_invite", {
     p_user_id: input.userId, p_activity_id: input.activityId, p_token_digest: token.digest, p_token_hint: token.hint,
     p_role: input.role, p_expires_at: input.expiresAt, p_max_uses: input.maxUses, p_request_id: input.requestId,
@@ -28,7 +28,7 @@ export async function createInvite(input: { userId: string; activityId: string; 
 
 export async function createScopedInvite(input: { userId: string; activityId: string; inviteType: "activity_team" | "team_member"; teamId?: string | null; teamName?: string | null; expiresAt: string | null; maxUses: number; requestId: string }) {
   const token = createInviteToken();
-  if (isLocalFormalBoard()) return { invite: localCreateInvite({ userId: input.userId, activityId: input.activityId, role: "member", expiresAt: input.expiresAt, maxUses: input.maxUses, tokenDigest: token.digest, tokenHint: token.hint, requestId: input.requestId }), token: token.token };
+  if (isLocalFormalBoard()) return { invite: localCreateInvite({ userId: input.userId, activityId: input.activityId, inviteType: input.inviteType, teamId: input.teamId, teamName: input.teamName, expiresAt: input.expiresAt, maxUses: input.maxUses, tokenDigest: token.digest, tokenHint: token.hint, requestId: input.requestId }), token: token.token };
   const rows = await supabaseRestRpc<InviteRow[]>("formal_create_activity_invite_v2", {
     p_user_id: input.userId, p_activity_id: input.activityId, p_invite_type: input.inviteType, p_team_id: input.teamId ?? null, p_team_name: input.teamName ?? null,
     p_token_digest: token.digest, p_token_hint: token.hint, p_expires_at: input.expiresAt, p_max_uses: input.maxUses, p_request_id: input.requestId,
