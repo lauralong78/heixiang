@@ -59,6 +59,7 @@ export async function PATCH(request: Request) {
     return Response.json({ ok: true, data: { team }, requestId });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "队伍已被其他人修改，请刷新后重试。"), { status: 409 });
+    if (error instanceof SupabaseRestError && error.status === 403) return Response.json(makeApiFailure(requestId, "FORBIDDEN", "只有当前队伍的队长可以编辑或删除队伍。"), { status: 403 });
     return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "队伍暂时无法修改，请稍后重试。", true), { status: 503 });
   }
 }
@@ -77,6 +78,7 @@ export async function DELETE(request: Request) {
     return Response.json({ ok: true, data: { deleted: true }, requestId });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "队伍已被其他人修改，请刷新后重试。"), { status: 409 });
+    if (error instanceof SupabaseRestError && error.status === 403) return Response.json(makeApiFailure(requestId, "FORBIDDEN", "只有当前队伍的队长可以编辑或删除队伍。"), { status: 403 });
     return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "队伍暂时无法删除，请稍后重试。", true), { status: 503 });
   }
 }

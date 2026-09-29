@@ -2,10 +2,10 @@ import "server-only";
 
 import { supabaseRestRpc } from "./supabase-rest";
 
-export type TaskRow = { id: string; team_id: string; title: string; description: string; status: string; progress: number; data_version: number };
+export type TaskRow = { id: string; team_id: string; title: string; description: string; status: string; progress: number; data_version: number; assigned_to_current_user?: boolean };
 
 export function listTasks(userId: string, activityId: string, teamId: string) {
-  return supabaseRestRpc<TaskRow[]>("formal_list_team_tasks", { p_user_id: userId, p_activity_id: activityId, p_team_id: teamId });
+  return supabaseRestRpc<TaskRow[]>("formal_list_team_tasks_v2", { p_user_id: userId, p_activity_id: activityId, p_team_id: teamId });
 }
 
 export async function createTask(input: { userId: string; activityId: string; teamId: string; title: string; description: string; requestId: string }) {

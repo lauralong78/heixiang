@@ -70,6 +70,7 @@ export async function PATCH(request: Request) {
     return Response.json({ ok: true, data: { task }, requestId });
   } catch (error) {
     if (error instanceof SupabaseRestError && error.status === 409) return Response.json(makeApiFailure(requestId, "CONFLICT", "任务已被其他人修改，请刷新后重试。"), { status: 409 });
+    if (error instanceof SupabaseRestError && error.status === 403) return Response.json(makeApiFailure(requestId, "FORBIDDEN", "只有当前队伍的队长可以修改任务；队员只能更新分配给自己的任务进度。"), { status: 403 });
     if (error instanceof SupabaseRestError) console.error("[formal-board] task update failed", { requestId, status: error.status, details: error.details });
     return Response.json(makeApiFailure(requestId, "INTERNAL_ERROR", "任务暂时无法更新，请保持 TUN 或代理网络开启后重试。", true), { status: 503 });
   }

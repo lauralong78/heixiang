@@ -8,7 +8,7 @@ type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
 type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string; data_version?: number; deadline_at?: string | null };
 type Team = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number; team_role?: "captain" | "member" };
-type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number };
+type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number; assigned_to_current_user?: boolean };
 type TeamMember = { membership_id: string; user_id: string; display_name: string; role: string };
 type ActivityStats = { total: number; doing: number; done: number; progress: number };
 
@@ -395,6 +395,15 @@ export function FormalAuthApp() {
 
   const selectedActivity = activities.find((activity) => activity.id === selectedActivityId);
   const selectedTeam = teams.find((team) => team.id === selectedTeamId);
+  const isHost = selectedActivity?.role === "host";
+  const isCaptain = selectedTeam?.team_role === "captain";
+  const currentRoleLabel = !selectedActivity ? "未选择活动" : isHost ? "主持人" : isCaptain ? "队长" : "队员";
+  const currentRoleScope = !selectedActivity ? "登录后选择一个活动查看权限" : isHost ? "可编辑活动、设置截止时间、邀请队长加入活动" : isCaptain ? "可编辑本队、创建和分配任务、邀请队员加入本队" : "只能更新分配给自己的任务进度";
+  const canCreateActivity = !selectedActivity || isHost;
+  const canCreateTask = Boolean(isCaptain);
+  const canEditTeam = Boolean(isCaptain);
+  const canInviteTeam = Boolean(isHost);
+  const canInviteMembers = Boolean(isCaptain);
   const totalTaskCount = activityStats.total || teams.reduce((sum, team) => sum + team.task_count, 0);
   const completedTaskCount = tasks.filter((task) => task.status === "done").length;
   const activeTaskCount = tasks.filter((task) => task.status === "doing").length;
@@ -451,6 +460,10 @@ export function FormalAuthApp() {
                   </div> : <strong className={styles.formalCountdownEmpty}>{remainingLabel}</strong>}
                 </div>}
               </div>
+              <div className={styles.rolePanel} aria-label="当前身份和权限">
+                <div><span className={styles.formIndex}>CURRENT ROLE / 当前身份</span><strong>{currentRoleLabel}</strong></div>
+                <p>{currentRoleScope}</p>
+              </div>
               <div className={styles.dashboardActions}>
                 <button type="button" onClick={() => document.getElementById("formal-activity-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}>创建活动</button>
                 <button type="button" onClick={() => window.location.reload()}>刷新数据</button>
@@ -459,16 +472,15 @@ export function FormalAuthApp() {
               <section className={styles.invitePanel} aria-label="邀请加入活动">
                 <div>
                   <span className={styles.formIndex}>JOIN / INVITE</span>
-                  <strong>邀请成员加入当前活动</strong>
-                  <p>邀请默认授予协作者权限；服务端会再次检查活动、角色和邀请状态。</p>
+                  <strong>{canInviteTeam ? "邀请队长加入当前活动" : canInviteMembers ? "邀请队员加入当前队伍" : "使用邀请加入活动"}</strong>
+                  <p>{canInviteTeam ? "填写队伍名称后生成链接，再把链接发给队长。主持人不能使用自己的链接加入当前活动。" : canInviteMembers ? `当前队伍：${selectedTeam?.name ?? "未选择队伍"}。生成链接后发给队员。` : "把收到的邀请链接粘贴到这里；服务器会再次检查活动、队伍和身份权限。"}</p>
                 </div>
                 <div className={styles.inviteActions}>
-                  <input value={inviteTokenInput} onChange={(event) => setInviteTokenInput(event.target.value)} placeholder="粘贴邀请链接或邀请码" aria-label="邀请链接或邀请码" />
-                  <button type="button" onClick={() => void joinActivity(inviteTokenInput)} disabled={!inviteTokenInput.trim()}>加入活动</button>
-                  {selectedActivity?.role === "host" && <><input value={inviteTeamName} onChange={(event) => setInviteTeamName(event.target.value)} placeholder="要邀请的队伍名称" aria-label="要邀请的队伍名称" /><button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>邀请队长入场</button></>}
-                  {selectedTeam?.team_role === "captain" && <button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>邀请队员入队</button>}
+                  {!isHost && <><input value={inviteTokenInput} onChange={(event) => setInviteTokenInput(event.target.value)} placeholder="粘贴邀请链接或邀请码" aria-label="邀请链接或邀请码" /><button type="button" onClick={() => void joinActivity(inviteTokenInput)} disabled={!inviteTokenInput.trim()}>加入活动</button></>}
+                  {canInviteTeam && <><input value={inviteTeamName} onChange={(event) => setInviteTeamName(event.target.value)} placeholder="要邀请的队伍名称" aria-label="要邀请的队伍名称" /><button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>生成队长邀请</button></>}
+                  {canInviteMembers && <button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>生成队员邀请</button>}
                 </div>
-                {inviteLink && <div className={styles.inviteLinkRow}><input readOnly value={inviteLink} aria-label="生成的邀请链接" /><button type="button" onClick={() => void copyInviteLink()}>复制链接</button></div>}
+                {inviteLink && <div className={styles.inviteLinkRow}><div><span className={styles.formIndex}>SEND THIS LINK / 请私下发送</span><input readOnly value={inviteLink} aria-label="生成的邀请链接" /></div><button type="button" onClick={() => void copyInviteLink()}>复制链接</button></div>}
                 <p className={styles.message} role="status" aria-live="polite">{inviteMessage}</p>
               </section>
               <div className={styles.metrics} aria-label="活动统计">
@@ -487,7 +499,7 @@ export function FormalAuthApp() {
                   <div><span>01 / ACTIVITIES</span><h2 id="formal-activities-heading">活动</h2></div>
                   <p>活动是最高层级，下面再展开队伍和任务。</p>
                 </div>
-                <form id="formal-activity-form" className={styles.activityForm} onSubmit={createActivity}>
+                {canCreateActivity && <form id="formal-activity-form" className={styles.activityForm} onSubmit={createActivity}>
                   <label>
                     活动名称
                     <input value={activityTitle} onChange={(event) => setActivityTitle(event.target.value)} placeholder="例如：周末黑客松" required />
@@ -501,7 +513,8 @@ export function FormalAuthApp() {
                     <input type="datetime-local" value={activityDeadlineInput} onChange={(event) => setActivityDeadlineInput(event.target.value)} />
                   </label>
                   <button className={styles.primaryButton} type="submit" disabled={busy}><span>创建活动</span><b>↗</b></button>
-                </form>
+                </form>}
+                {!canCreateActivity && <p className={styles.authHint}>当前活动由主持人管理。你可以在自己拥有主持人身份时创建新的活动。</p>}
                 <p className={styles.message} role="status" aria-live="polite">{activityMessage}</p>
                 <div className={`${styles.activityList} ${styles.levelActivity}`}>
                   <div className={styles.levelHeading}><span className={styles.levelIndex}>01</span><div><span className={styles.formIndex}>最高层级 / ACTIVITY</span><strong>活动</strong></div></div>
@@ -528,19 +541,20 @@ export function FormalAuthApp() {
                   <div className={styles.levelHeading}><span className={styles.levelIndex}>02</span><div><span className={styles.formIndex}>第二层级 / TEAM</span><strong>队伍</strong></div></div>
                   <p className={styles.authHint}>队伍由主持人邀请队长入场后自动创建；队长再从上方生成队员邀请。</p>
                   <p className={styles.message} role="status" aria-live="polite">{teamMessage}</p>
-                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <div className={`${styles.teamItem} ${selectedTeamId === team.id ? styles.teamItemActive : ""}`} key={team.id} onClick={() => setSelectedTeamId(team.id)} role="button" tabIndex={0}><strong>{team.name}</strong><span>{team.task_count} 个任务</span><div className={styles.itemActions}><button type="button" onClick={(event) => { event.stopPropagation(); void editTeam(team); }}>编辑</button><button type="button" onClick={(event) => { event.stopPropagation(); void removeTeam(team); }}>删除</button></div></div>)}
+                  {teams.length === 0 ? <p className={styles.authHint}>这个活动还没有队伍。</p> : teams.map((team) => <div className={`${styles.teamItem} ${selectedTeamId === team.id ? styles.teamItemActive : ""}`} key={team.id} onClick={() => setSelectedTeamId(team.id)} role="button" tabIndex={0}><strong>{team.name}</strong><span>{team.task_count} 个任务 · {team.team_role === "captain" ? "你是队长" : "你是队员"}</span>{canEditTeam && team.team_role === "captain" && <div className={styles.itemActions}><button type="button" onClick={(event) => { event.stopPropagation(); void editTeam(team); }}>编辑</button><button type="button" onClick={(event) => { event.stopPropagation(); void removeTeam(team); }}>删除</button></div>}</div>)}
                 </div>
               )}
               {selectedActivityId && selectedTeamId && (
                 <div className={`${styles.taskPanel} ${styles.levelTask}`}>
                   <div className={styles.levelHeading}><span className={styles.levelIndex}>03</span><div><span className={styles.formIndex}>第三层级 / TASK</span><strong>任务</strong></div></div>
-                  <form className={styles.activityForm} onSubmit={createTask}>
+                  {canCreateTask && <form className={styles.activityForm} onSubmit={createTask}>
                     <label>任务标题<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder="例如：完成首页原型" required /></label>
                     <label>任务说明（可选）<input value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} placeholder="任务完成标准" /></label>
                     <button className={styles.primaryButton} type="submit"><span>创建任务</span><b>↗</b></button>
-                  </form>
+                  </form>}
+                  {!canCreateTask && <p className={styles.authHint}>只有当前队伍的队长可以创建、编辑和分配任务。</p>}
                   <p className={styles.message} role="status" aria-live="polite">{taskMessage}</p>
-                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong><input className={styles.taskProgressInput} type="number" min="0" max="100" value={task.progress} onChange={(event) => changeTaskStatus(task, task.status, Number(event.target.value))} aria-label={`更新任务 ${task.title} 进度`} /><span>%</span></div><select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select><div className={styles.taskItemActions}>{selectedTeam?.team_role === "captain" && <button type="button" onClick={() => void beginEditTask(task)}>编辑任务</button>}</div>{editingTaskId === task.id && <form className={styles.taskEditForm} onSubmit={saveTaskEdit}><label>任务标题<input value={editTaskTitle} onChange={(event) => setEditTaskTitle(event.target.value)} required /></label><label>任务说明<textarea value={editTaskDescription} onChange={(event) => setEditTaskDescription(event.target.value)} rows={3} /></label><fieldset className={styles.assigneeField}><legend>分配给队员（可多选）</legend>{teamMembers.filter((member) => member.role === "member").length === 0 ? <small>还没有队员，请先生成队员邀请。</small> : teamMembers.filter((member) => member.role === "member").map((member) => <label key={member.membership_id}><input type="checkbox" checked={editTaskAssignees.includes(member.membership_id)} onChange={(event) => setEditTaskAssignees((current) => event.target.checked ? [...current, member.membership_id] : current.filter((id) => id !== member.membership_id))} />{member.display_name}</label>)}</fieldset><div className={styles.activityEditActions}><button className={styles.primaryButton} type="submit"><span>保存任务</span><b>↗</b></button><button type="button" onClick={() => setEditingTaskId(null)}>取消</button></div></form>}</div>)}
+                  {tasks.length === 0 ? <p className={styles.authHint}>这个队伍还没有任务。</p> : tasks.map((task) => <div className={styles.taskItem} key={task.id}><div><strong>{task.title}</strong>{isCaptain || task.assigned_to_current_user ? <input className={styles.taskProgressInput} type="number" min="0" max="100" value={task.progress} onChange={(event) => changeTaskStatus(task, task.status, Number(event.target.value))} aria-label={`更新任务 ${task.title} 进度`} /> : <span className={styles.taskReadOnly}>{task.assigned_to_current_user ? "可更新" : "未分配给你"}</span>}<span>%</span></div>{isCaptain ? <select value={task.status} onChange={(event) => changeTaskStatus(task, event.target.value as Task["status"])} aria-label={`更新任务 ${task.title} 状态`}><option value="todo">待办</option><option value="doing">进行中</option><option value="done">完成</option></select> : <span className={styles.taskReadOnly}>仅可改进度</span>}<div className={styles.taskItemActions}>{isCaptain && <button type="button" onClick={() => void beginEditTask(task)}>编辑任务</button>}</div>{editingTaskId === task.id && <form className={styles.taskEditForm} onSubmit={saveTaskEdit}><label>任务标题<input value={editTaskTitle} onChange={(event) => setEditTaskTitle(event.target.value)} required /></label><label>任务说明<textarea value={editTaskDescription} onChange={(event) => setEditTaskDescription(event.target.value)} rows={3} /></label><fieldset className={styles.assigneeField}><legend>分配给队员（可多选）</legend>{teamMembers.filter((member) => member.role === "member").length === 0 ? <small>还没有队员，请先生成队员邀请。</small> : teamMembers.filter((member) => member.role === "member").map((member) => <label key={member.membership_id}><input type="checkbox" checked={editTaskAssignees.includes(member.membership_id)} onChange={(event) => setEditTaskAssignees((current) => event.target.checked ? [...current, member.membership_id] : current.filter((id) => id !== member.membership_id))} />{member.display_name}</label>)}</fieldset><div className={styles.activityEditActions}><button className={styles.primaryButton} type="submit"><span>保存任务</span><b>↗</b></button><button type="button" onClick={() => setEditingTaskId(null)}>取消</button></div></form>}</div>)}
                 </div>
               )}
               <p className={styles.authHint}>不要把浏览器 Cookie、密码或 Secret key 分享给任何人。</p>
