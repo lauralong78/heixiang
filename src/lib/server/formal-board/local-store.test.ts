@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { getFormalBoardStorageMode } from "./storage";
+import { FormalBoardStorageConfigurationError, getFormalBoardStorageMode } from "./storage";
 import { localCreateActivity, localCreatePoll, localCreateOption, localCastVote, localSnapshot, localUpdatePoll, localRegister } from "./local-store";
 
 test("formal board defaults to local mode without Supabase configuration", () => {
   assert.equal(getFormalBoardStorageMode({}), "local");
-  assert.equal(getFormalBoardStorageMode({ SUPABASE_URL: "https://example.supabase.co", SUPABASE_SECRET_KEY: "not-used-in-test" }), "supabase");
+  assert.equal(getFormalBoardStorageMode({ SUPABASE_URL: "https://example.supabase.co", SUPABASE_SECRET_KEY: "not-used-in-test" }), "local");
+  assert.equal(getFormalBoardStorageMode({ FORMAL_BOARD_STORAGE_MODE: "supabase", SUPABASE_URL: "https://example.supabase.co", SUPABASE_SECRET_KEY: "not-used-in-test" }), "supabase");
+  assert.throws(() => getFormalBoardStorageMode({ FORMAL_BOARD_STORAGE_MODE: "supabase" }), (error: unknown) => error instanceof FormalBoardStorageConfigurationError && error.message.includes("缺少 SUPABASE_URL"));
 });
 
 test("local mode keeps vote uniqueness and server-side activity ownership", async () => {
