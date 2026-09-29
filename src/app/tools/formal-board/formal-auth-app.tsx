@@ -44,6 +44,9 @@ export function FormalAuthApp() {
   const [activityDescription, setActivityDescription] = useState("");
   const [activityDeadlineInput, setActivityDeadlineInput] = useState("");
   const [activityMessage, setActivityMessage] = useState("");
+  const [inviteTokenInput, setInviteTokenInput] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
   const [message, setMessage] = useState("正在检查登录状态…");
   const [busy, setBusy] = useState(true);
   const [clock, setClock] = useState(() => Date.now());
@@ -91,6 +94,14 @@ export function FormalAuthApp() {
         setActivities(data?.activities ?? []);
       })
       .catch(() => setActivityMessage("活动读取失败，请检查网络后重试。"));
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const token = new URLSearchParams(window.location.search).get("invite");
+    if (!token) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    void joinActivity(token);
   }, [user]);
 
   useEffect(() => {
@@ -226,6 +237,43 @@ export function FormalAuthApp() {
     }
   }
 
+  async function joinActivity(value: string) {
+    setInviteMessage("正在验证邀请…");
+    try {
+      const response = await fetch("/api/formal-board/invites/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: value }) });
+      const payload = await response.json() as unknown;
+      if (!response.ok) { setInviteMessage(extractMessage(payload, "邀请无效或已过期。")); return; }
+      const data = (payload as { data?: { activity_id?: string; already_joined?: boolean } }).data;
+      const activityResponse = await fetch("/api/formal-board/activities", { cache: "no-store" });
+      const activityPayload = await activityResponse.json() as { data?: { activities?: Activity[] } };
+      const nextActivities = activityPayload.data?.activities ?? [];
+      setActivities(nextActivities);
+      if (data?.activity_id) { setSelectedActivityId(data.activity_id); setSelectedTeamId(null); setTasks([]); }
+      setInviteTokenInput("");
+      setInviteMessage(data?.already_joined ? "你已经是这个活动的成员，已恢复访问。" : "已加入活动，正在同步队伍和任务。")
+    } catch { setInviteMessage("网络连接失败，加入状态未确认。请稍后重试。"); }
+  }
+
+  async function createInvite() {
+    if (!selectedActivityId) return;
+    setInviteMessage("正在生成邀请链接…");
+    try {
+      const response = await fetch("/api/formal-board/invites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: selectedActivityId, role: "collaborator", maxUses: 50 }) });
+      const payload = await response.json() as unknown;
+      if (!response.ok) { setInviteMessage(extractMessage(payload, "邀请生成失败，请稍后重试。")); return; }
+      const data = (payload as { data?: { token?: string } }).data;
+      if (!data?.token) { setInviteMessage("服务器没有返回可用邀请，请稍后重试。"); return; }
+      setInviteLink(`${window.location.origin}/tools/formal-board?invite=${encodeURIComponent(data.token)}`);
+      setInviteMessage("邀请链接已生成。请用私下渠道发送，不要公开发布。");
+    } catch { setInviteMessage("网络连接失败，邀请状态未确认。请稍后重试。"); }
+  }
+
+  async function copyInviteLink() {
+    if (!inviteLink) return;
+    try { await navigator.clipboard.writeText(inviteLink); setInviteMessage("邀请链接已复制到剪贴板。"); }
+    catch { setInviteMessage("浏览器拒绝访问剪贴板，请手动复制链接。" ); }
+  }
+
   async function createTeam(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedActivityId) return;
@@ -350,6 +398,20 @@ export function FormalAuthApp() {
                 <button type="button" onClick={() => window.location.reload()}>刷新数据</button>
                 <button type="button" className={styles.dashboardDanger} onClick={logout} disabled={busy}>退出登录</button>
               </div>
+              <section className={styles.invitePanel} aria-label="邀请加入活动">
+                <div>
+                  <span className={styles.formIndex}>JOIN / INVITE</span>
+                  <strong>邀请成员加入当前活动</strong>
+                  <p>邀请默认授予协作者权限；服务端会再次检查活动、角色和邀请状态。</p>
+                </div>
+                <div className={styles.inviteActions}>
+                  <input value={inviteTokenInput} onChange={(event) => setInviteTokenInput(event.target.value)} placeholder="粘贴邀请链接或邀请码" aria-label="邀请链接或邀请码" />
+                  <button type="button" onClick={() => void joinActivity(inviteTokenInput)} disabled={!inviteTokenInput.trim()}>加入活动</button>
+                  {selectedActivity?.role === "host" && <button type="button" onClick={() => void createInvite()} disabled={!selectedActivityId}>生成邀请链接</button>}
+                </div>
+                {inviteLink && <div className={styles.inviteLinkRow}><input readOnly value={inviteLink} aria-label="生成的邀请链接" /><button type="button" onClick={() => void copyInviteLink()}>复制链接</button></div>}
+                <p className={styles.message} role="status" aria-live="polite">{inviteMessage}</p>
+              </section>
               <div className={styles.metrics} aria-label="活动统计">
                 <div className={styles.metricLead}>
                   <span>{selectedTeamId ? "SELECTED TEAM PROGRESS" : "ACTIVITY PROGRESS"}</span>

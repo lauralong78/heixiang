@@ -72,6 +72,12 @@
 .dashboardActions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
 .dashboardActions button { min-width: 118px; }
 .dashboardActions .dashboardDanger { color: var(--pb-red); background: #ffe2d7; }
+.invitePanel { display: grid; gap: 14px; margin: 24px 0; padding: 20px; border: 3px solid var(--pb-ink); background: var(--pb-paper); box-shadow: 6px 6px 0 var(--pb-ink); }
+.invitePanel strong { display: block; margin-top: 6px; font-size: 1.3rem; }
+.invitePanel p { margin: 6px 0 0; color: var(--pb-muted); }
+.inviteActions, .inviteLinkRow { display: flex; gap: 10px; align-items: stretch; }
+.inviteActions input, .inviteLinkRow input { min-width: 0; flex: 1; }
+.inviteActions button, .inviteLinkRow button { background: var(--pb-yellow); }
 .dashboardShell .metrics { grid-template-columns: minmax(300px, 1.8fr) repeat(4, minmax(130px, 0.55fr)); width: 100%; margin-top: 14px; }
 .dashboardShell .metricLead, .dashboardShell .metric { min-height: 156px; }
 .dashboardShell .metric strong { font-size: clamp(40px, 4vw, 64px); }
