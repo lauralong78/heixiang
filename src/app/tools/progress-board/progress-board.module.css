@@ -146,13 +146,20 @@
 .activityList .formIndex::after, .teamPanel .formIndex::after, .taskPanel .formIndex::after { display: block; margin-top: 5px; color: var(--pb-muted); font-family: var(--font-geist-sans), "Microsoft YaHei", sans-serif; font-size: 18px; letter-spacing: -0.04em; }
 .activityList .formIndex::after { content: "活动"; }
 .activityList > p { margin: 0; color: var(--pb-muted); font-size: 14px; }
-.activityItem { display: grid; gap: 5px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 11px 12px; background: rgba(255, 255, 255, 0.45); box-shadow: 3px 3px 0 var(--pb-ink); }
-.activityItem { width: 100%; color: var(--pb-ink); font: inherit; text-align: left; cursor: pointer; }
+.activityItem { display: grid; gap: 8px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 11px 12px; background: rgba(255, 255, 255, 0.45); box-shadow: 3px 3px 0 var(--pb-ink); }
+.activitySelectButton { display: grid; gap: 5px; width: 100%; min-height: 0 !important; border: 0 !important; padding: 0 !important; color: var(--pb-ink); background: transparent !important; box-shadow: none !important; text-align: left; cursor: pointer; }
 .activityItemActive { background: var(--pb-yellow); }
-.activityItem > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.activitySelectButton > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .activityItem strong { overflow: hidden; font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
 .activityItem span, .activityItem small { color: var(--pb-muted); font-size: 13px; line-height: 1.55; }
 .activityItem small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activityEditButton { justify-self: start; min-height: 34px !important; padding: 6px 10px !important; background: var(--pb-blue) !important; font-size: 12px !important; }
+.activityEditForm { display: grid; gap: 10px; margin-top: 8px; padding-top: 16px; border-top: 2px dashed rgba(30, 28, 26, 0.32); }
+.activityEditForm label { display: grid; gap: 5px; margin: 0; font-size: 12px; font-weight: 800; }
+.activityEditForm textarea { min-height: 70px; }
+.activityEditActions { display: flex; gap: 8px; align-items: center; }
+.activityEditActions .primaryButton { width: auto; min-height: 44px; flex: 1; }
+.activityEditActions .primaryButton span { font-size: 16px; }
 .teamPanel { display: grid; gap: 8px; margin: 42px 0 6px 42px; padding: 28px; border: 3px solid var(--pb-ink); border-radius: 14px; background: var(--pb-blue); box-shadow: 5px 6px 0 var(--pb-ink); }
 .teamPanel .formIndex::after { content: "队伍"; }
 .teamItem { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 10px 12px; background: var(--pb-green); box-shadow: 3px 3px 0 var(--pb-ink); }

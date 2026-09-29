@@ -36,3 +36,12 @@ export async function createActivityWithDeadline(input: { userId: string; title:
   if (!rows[0]) throw new Error("Activity creation returned no activity.");
   return rows[0];
 }
+
+export async function updateActivity(input: { userId: string; activityId: string; title: string; description: string; deadlineAt?: string | null; status: string; expectedVersion: number; requestId: string }) {
+  const rows = await supabaseRestRpc<ActivityRow[]>("formal_update_activity", {
+    p_user_id: input.userId, p_activity_id: input.activityId, p_title: input.title, p_description: input.description,
+    p_deadline_at: input.deadlineAt ?? null, p_status: input.status, p_expected_version: input.expectedVersion, p_request_id: input.requestId,
+  });
+  if (!rows[0]) throw new Error("Activity update returned no activity.");
+  return rows[0];
+}

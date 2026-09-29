@@ -6,7 +6,7 @@ import styles from "../progress-board/progress-board.module.css";
 
 type AuthMode = "login" | "register";
 type PublicUser = { id: string; loginId: string; status: string; createdAt: string };
-type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string; deadline_at?: string | null };
+type Activity = { id: string; title: string; description: string; status: string; role: string; updated_at: string; data_version?: number; deadline_at?: string | null };
 type Team = { id: string; name: string; description: string; task_count: number; sort_order: number; data_version?: number };
 type Task = { id: string; team_id: string; title: string; description: string; status: "todo" | "doing" | "done"; progress: number; data_version: number };
 type ActivityStats = { total: number; doing: number; done: number; progress: number };
@@ -44,6 +44,11 @@ export function FormalAuthApp() {
   const [activityDescription, setActivityDescription] = useState("");
   const [activityDeadlineInput, setActivityDeadlineInput] = useState("");
   const [activityMessage, setActivityMessage] = useState("");
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [editActivityTitle, setEditActivityTitle] = useState("");
+  const [editActivityDescription, setEditActivityDescription] = useState("");
+  const [editActivityDeadline, setEditActivityDeadline] = useState("");
+  const [editActivityStatus, setEditActivityStatus] = useState("draft");
   const [inviteTokenInput, setInviteTokenInput] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteLink, setInviteLink] = useState("");
@@ -235,6 +240,31 @@ export function FormalAuthApp() {
     } catch {
       setActivityMessage("网络连接失败，活动没有被标记为已创建。");
     }
+  }
+
+  function beginEditActivity(activity: Activity) {
+    setEditingActivityId(activity.id);
+    setEditActivityTitle(activity.title);
+    setEditActivityDescription(activity.description);
+    setEditActivityDeadline(activity.deadline_at ? new Date(activity.deadline_at).toISOString().slice(0, 16) : "");
+    setEditActivityStatus(activity.status);
+    setActivityMessage("");
+  }
+
+  async function saveActivityEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const activity = activities.find((item) => item.id === editingActivityId);
+    if (!activity || activity.data_version === undefined) { setActivityMessage("活动版本信息缺失，请刷新后重试。"); return; }
+    setActivityMessage("正在保存活动…");
+    try {
+      const response = await fetch("/api/formal-board/activities", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ activityId: activity.id, title: editActivityTitle, description: editActivityDescription, deadlineAt: editActivityDeadline ? new Date(editActivityDeadline).toISOString() : null, status: editActivityStatus, expectedVersion: activity.data_version }) });
+      const payload = await response.json() as unknown;
+      if (!response.ok) { setActivityMessage(extractMessage(payload, "活动修改失败，请刷新后重试。")); return; }
+      const data = (payload as { data?: { activity?: Activity } }).data;
+      if (data?.activity) setActivities((current) => current.map((item) => item.id === activity.id ? data.activity as Activity : item));
+      setEditingActivityId(null);
+      setActivityMessage("活动已更新，倒计时会同步刷新。");
+    } catch { setActivityMessage("网络连接失败，活动修改状态未确认。请稍后重试。"); }
   }
 
   async function joinActivity(value: string) {
@@ -462,10 +492,20 @@ export function FormalAuthApp() {
                 <div className={`${styles.activityList} ${styles.levelActivity}`}>
                   <div className={styles.levelHeading}><span className={styles.levelIndex}>01</span><div><span className={styles.formIndex}>最高层级 / ACTIVITY</span><strong>活动</strong></div></div>
                   {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
-                    <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
-                      <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
-                      <small>{activity.description || "暂无说明"}{activity.deadline_at ? ` · 截止 ${new Date(activity.deadline_at).toLocaleString("zh-CN", { hour12: false })}` : ""}</small>
-                    </button>
+                    <div className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} key={activity.id}>
+                      <button type="button" className={styles.activitySelectButton} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
+                        <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
+                        <small>{activity.description || "暂无说明"}{activity.deadline_at ? ` · 截止 ${new Date(activity.deadline_at).toLocaleString("zh-CN", { hour12: false })}` : " · 未设置截止时间"}</small>
+                      </button>
+                      {activity.role === "host" && <button type="button" className={styles.activityEditButton} onClick={() => beginEditActivity(activity)}>编辑活动</button>}
+                      {editingActivityId === activity.id && <form className={styles.activityEditForm} onSubmit={saveActivityEdit}>
+                        <label>活动名称<input value={editActivityTitle} onChange={(event) => setEditActivityTitle(event.target.value)} required /></label>
+                        <label>活动说明<textarea value={editActivityDescription} onChange={(event) => setEditActivityDescription(event.target.value)} rows={3} /></label>
+                        <label>截止时间<input type="datetime-local" value={editActivityDeadline} onChange={(event) => setEditActivityDeadline(event.target.value)} /></label>
+                        <label>活动状态<select value={editActivityStatus} onChange={(event) => setEditActivityStatus(event.target.value)}><option value="draft">草稿</option><option value="open">进行中</option><option value="paused">暂停</option><option value="closed">已结束</option></select></label>
+                        <div className={styles.activityEditActions}><button className={styles.primaryButton} type="submit"><span>保存修改</span><b>↗</b></button><button type="button" onClick={() => setEditingActivityId(null)}>取消</button></div>
+                      </form>}
+                    </div>
                   ))}
                 </div>
               </section>
