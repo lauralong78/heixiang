@@ -33,6 +33,8 @@ language sql security definer set search_path = public as $$
   order by t.sort_order, t.created_at;
 $$;
 
+drop function if exists public.formal_create_team(uuid, uuid, text, text, text);
+
 create or replace function public.formal_create_team(p_user_id uuid, p_activity_id uuid, p_name text, p_description text, p_request_id text)
 returns table (id uuid, name text, description text, task_count bigint, sort_order integer, data_version bigint, team_role text)
 language plpgsql security definer set search_path = public as $$
