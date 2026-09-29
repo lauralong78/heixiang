@@ -444,8 +444,8 @@ export function FormalAuthApp() {
                   <button className={styles.primaryButton} type="submit" disabled={busy}><span>创建活动</span><b>↗</b></button>
                 </form>
                 <p className={styles.message} role="status" aria-live="polite">{activityMessage}</p>
-                <div className={styles.activityList}>
-                  <span className={styles.formIndex}>活动列表</span>
+                <div className={`${styles.activityList} ${styles.levelActivity}`}>
+                  <div className={styles.levelHeading}><span className={styles.levelIndex}>01</span><div><span className={styles.formIndex}>最高层级 / ACTIVITY</span><strong>活动</strong></div></div>
                   {activities.length === 0 ? <p>还没有活动。创建后会显示在这里。</p> : activities.map((activity) => (
                     <button type="button" key={activity.id} className={`${styles.activityItem} ${selectedActivityId === activity.id ? styles.activityItemActive : ""}`} onClick={() => { setSelectedActivityId(activity.id); setSelectedTeamId(null); setTasks([]); }}>
                       <div><strong>{activity.title}</strong><span>{activity.role} · {activity.status}</span></div>
@@ -455,8 +455,8 @@ export function FormalAuthApp() {
                 </div>
               </section>
               {selectedActivityId && (
-                <div className={styles.teamPanel}>
-                  <span className={styles.formIndex}>03 / TEAMS</span>
+                <div className={`${styles.teamPanel} ${styles.levelTeam}`}>
+                  <div className={styles.levelHeading}><span className={styles.levelIndex}>02</span><div><span className={styles.formIndex}>第二层级 / TEAM</span><strong>队伍</strong></div></div>
                   <form className={styles.activityForm} onSubmit={createTeam}>
                     <label>队伍名称<input value={teamName} onChange={(event) => setTeamName(event.target.value)} placeholder="例如：蓝队" required /></label>
                     <label>队伍说明（可选）<input value={teamDescription} onChange={(event) => setTeamDescription(event.target.value)} placeholder="队伍负责什么" /></label>
@@ -467,8 +467,8 @@ export function FormalAuthApp() {
                 </div>
               )}
               {selectedActivityId && selectedTeamId && (
-                <div className={styles.taskPanel}>
-                  <span className={styles.formIndex}>04 / TASKS</span>
+                <div className={`${styles.taskPanel} ${styles.levelTask}`}>
+                  <div className={styles.levelHeading}><span className={styles.levelIndex}>03</span><div><span className={styles.formIndex}>第三层级 / TASK</span><strong>任务</strong></div></div>
                   <form className={styles.activityForm} onSubmit={createTask}>
                     <label>任务标题<input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} placeholder="例如：完成首页原型" required /></label>
                     <label>任务说明（可选）<input value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} placeholder="任务完成标准" /></label>

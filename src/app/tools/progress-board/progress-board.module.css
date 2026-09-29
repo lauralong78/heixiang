@@ -123,6 +123,13 @@
 .page textarea { resize: vertical; min-height: 76px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 11px 12px; color: var(--pb-ink); background: rgba(255, 255, 255, 0.55); font: inherit; line-height: 1.5; }
 .page textarea:focus-visible { outline: 3px solid var(--pb-red); outline-offset: 3px; }
 .activityList { display: grid; gap: 10px; margin: 28px 0 6px; padding-top: 24px; border-top: 4px solid var(--pb-ink); }
+.levelActivity { margin-top: 34px; padding: 26px; border: 3px solid var(--pb-ink); border-radius: 14px; background: #fffaf0; box-shadow: var(--pb-shadow); }
+.levelHeading { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.levelHeading > div { display: grid; gap: 3px; }
+.levelHeading .formIndex { margin: 0; font-size: 11px; }
+.levelHeading .formIndex::after { display: none; content: none; }
+.levelHeading strong { font-size: clamp(30px, 4vw, 48px); line-height: 0.95; letter-spacing: -0.06em; }
+.levelIndex { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border: 3px solid var(--pb-ink); border-radius: 50%; background: var(--pb-yellow); font-family: var(--font-geist-mono), monospace; font-size: 14px; font-weight: 850; }
 .activityList .formIndex, .teamPanel .formIndex, .taskPanel .formIndex { display: block; margin-bottom: 4px; font-size: 12px; }
 .activityList .formIndex::after, .teamPanel .formIndex::after, .taskPanel .formIndex::after { display: block; margin-top: 5px; color: var(--pb-muted); font-family: var(--font-geist-sans), "Microsoft YaHei", sans-serif; font-size: 18px; letter-spacing: -0.04em; }
 .activityList .formIndex::after { content: "活动"; }
@@ -134,7 +141,7 @@
 .activityItem strong { overflow: hidden; font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
 .activityItem span, .activityItem small { color: var(--pb-muted); font-size: 13px; line-height: 1.55; }
 .activityItem small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.teamPanel { display: grid; gap: 8px; margin: 34px 0 6px 18px; padding: 24px 0 0 24px; border-top: 3px dashed rgba(30, 28, 26, 0.35); border-left: 5px solid var(--pb-green); }
+.teamPanel { display: grid; gap: 8px; margin: 42px 0 6px 42px; padding: 28px; border: 3px solid var(--pb-ink); border-radius: 14px; background: var(--pb-blue); box-shadow: 5px 6px 0 var(--pb-ink); }
 .teamPanel .formIndex::after { content: "队伍"; }
 .teamItem { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 10px 12px; background: var(--pb-green); box-shadow: 3px 3px 0 var(--pb-ink); }
 .teamItem { width: 100%; color: var(--pb-ink); font: inherit; text-align: left; cursor: pointer; }
@@ -143,7 +150,7 @@
 .teamItem span { color: var(--pb-muted); font-size: 13px; }
 .itemActions { display: flex; gap: 6px; margin-left: auto; }
 .itemActions button { border: 2px solid var(--pb-ink); border-radius: 5px; padding: 4px 7px; background: rgba(255,255,255,.55); color: var(--pb-ink); font: inherit; font-size: 12px; cursor: pointer; }
-.taskPanel { display: grid; gap: 8px; margin: 30px 0 6px 36px; padding: 24px 0 0 24px; border-top: 3px dashed rgba(30, 28, 26, 0.35); border-left: 5px solid var(--pb-orange); }
+.taskPanel { display: grid; gap: 8px; margin: 32px 0 6px 42px; padding: 28px; border: 3px solid var(--pb-ink); border-radius: 14px; background: #fffaf0; box-shadow: 5px 6px 0 var(--pb-ink); }
 .taskPanel .formIndex::after { content: "任务"; }
 .taskItem { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border: 3px solid var(--pb-ink); border-radius: 8px; padding: 10px 12px; background: var(--pb-orange); box-shadow: 3px 3px 0 var(--pb-ink); }
 .taskItem > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
