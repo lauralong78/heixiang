@@ -21,5 +21,7 @@ test("local mode keeps vote uniqueness and server-side activity ownership", asyn
   assert.equal(opened.status, "open");
   assert.equal(localCastVote({ userId: ownerId, pollId: poll.id, optionId: option.id, requestId: "local-test-vote" }).code, "RECORDED");
   assert.equal(localCastVote({ userId: ownerId, pollId: poll.id, optionId: option.id, requestId: "local-test-vote-repeat" }).code, "ALREADY_VOTED");
-  assert.equal(localSnapshot(ownerId, poll.id).viewerVote?.optionId, option.id);
+  const snapshot = localSnapshot(ownerId, poll.id);
+  assert.equal(snapshot.viewerVote?.optionId, option.id);
+  assert.equal(snapshot.results[0]?.count, 1, "live mode exposes counts through both snapshot and result semantics");
 });

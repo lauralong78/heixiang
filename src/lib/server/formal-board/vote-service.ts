@@ -46,6 +46,6 @@ export function getPollSnapshot(userId: string, pollId: string) {
   return supabaseRestRpc<PollSnapshot>("formal_get_poll_snapshot", { p_user_id: userId, p_poll_id: pollId });
 }
 export function getPollResult(userId: string, pollId: string) {
-  if (isLocalFormalBoard()) return Promise.resolve(localSnapshot(userId, pollId, true));
+  if (isLocalFormalBoard()) return Promise.resolve(localSnapshot(userId, pollId));
   return supabaseRestRpc<PollSnapshot>("formal_get_poll_result", { p_user_id: userId, p_poll_id: pollId });
 }
