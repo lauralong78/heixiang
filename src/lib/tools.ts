@@ -54,6 +54,15 @@ export const tools: HackKitTool[] = [
     tags: ["倒计时", "看板", "进度", "JSON"],
   },
   {
+    slug: "formal-board",
+    title: "正式进度看板",
+    description: "使用自选 ID、服务端会话和活动内权限测试正式协作看板；当前是本地正式服务测试入口。",
+    category: "协作",
+    status: "available",
+    href: "/tools/formal-board",
+    tags: ["正式版", "账号", "活动", "服务端"],
+  },
+  {
     slug: "icebreaker",
     title: "现场破冰",
     description: "按昵称、技能和兴趣安排轮换配对，尽量减少重复，并说明配对依据。",
@@ -70,6 +79,15 @@ export const tools: HackKitTool[] = [
     status: "available",
     href: "/tools/vote-wall",
     tags: ["投票", "作品", "结果", "本机演示"],
+  },
+  {
+    slug: "formal-vote-wall",
+    title: "正式投票墙",
+    description: "在受邀活动中创建、开放和参与投票；账号与权限由服务端复核，当前用于本地正式服务测试。",
+    category: "现场",
+    status: "available",
+    href: "/tools/formal-vote-wall",
+    tags: ["正式版", "投票", "权限", "服务端"],
   },
   {
     slug: "checkin-claim",
