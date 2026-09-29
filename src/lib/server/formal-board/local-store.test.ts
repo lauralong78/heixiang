@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { FormalBoardStorageConfigurationError, getFormalBoardStorageMode } from "./storage";
-import { localCreateActivity, localCreatePoll, localCreateOption, localCastVote, localSnapshot, localUpdatePoll, localRegister, localCreateInvite, localJoinInvite, localListTeams, localRevokeInvite, localUpdateActivity } from "./local-store";
+import { FormalBoardLocalError, localCreateActivity, localCreatePoll, localCreateOption, localCastVote, localSnapshot, localUpdatePoll, localRegister, localCreateInvite, localJoinInvite, localListTeams, localRevokeInvite, localUpdateActivity, localCreateTask } from "./local-store";
 import { createInviteToken } from "./invite-service";
 
 test("formal board defaults to local mode without Supabase configuration", () => {
@@ -45,6 +45,8 @@ test("local scoped invites preserve team semantics and enforce reuse limits", as
   assert.equal(localListTeams(captain.id, activity.id).find((team) => team.id === captainJoin.team_id)?.team_role, "captain");
   assert.equal(localJoinInvite({ userId: captain.id, tokenDigest: captainToken.digest, requestId: `invite-repeat-${suffix}` })[0].already_joined, true);
   assert.equal(captainInvite.team_name, "Alpha");
+  assert.equal("token_digest" in captainInvite, false);
+  assert.equal("uses" in captainInvite, false);
 
   const memberToken = createInviteToken();
   const memberInvite = localCreateInvite({ userId: captain.id, activityId: activity.id, inviteType: "team_member", teamId: captainJoin.team_id, expiresAt: null, maxUses: 1, tokenDigest: memberToken.digest, tokenHint: memberToken.hint, requestId: `member-invite-${suffix}` });
@@ -62,4 +64,20 @@ test("local scoped invites preserve team semantics and enforce reuse limits", as
   localCreateInvite({ userId: host.id, activityId: activity.id, inviteType: "activity_team", teamName: "Expired", expiresAt: new Date(Date.now() - 1000).toISOString(), maxUses: 1, tokenDigest: expiredToken.digest, tokenHint: expiredToken.hint, requestId: `expire-create-${suffix}` });
   assert.throws(() => localJoinInvite({ userId: secondMember.id, tokenDigest: expiredToken.digest, requestId: `expire-join-${suffix}` }), /邀请无效/);
   assert.equal(memberInvite.team_id, captainJoin.team_id);
+});
+
+test("local task creation is captain-only even for the activity host", async () => {
+  const suffix = Date.now().toString();
+  const host = await localRegister(`task-host-${suffix}`, "local-test-password");
+  const captain = await localRegister(`task-captain-${suffix}`, "local-test-password");
+  const activity = localCreateActivity({ userId: host.id, title: "task permission test", description: "", requestId: `task-activity-${suffix}` });
+  const token = createInviteToken();
+  const invite = localCreateInvite({ userId: host.id, activityId: activity.id, inviteType: "activity_team", teamName: "Captain team", expiresAt: null, maxUses: 1, tokenDigest: token.digest, tokenHint: token.hint, requestId: `task-invite-${suffix}` });
+  const joined = localJoinInvite({ userId: captain.id, tokenDigest: token.digest, requestId: `task-join-${suffix}` })[0];
+
+  assert.equal("token_digest" in invite, false);
+  assert.equal("uses" in invite, false);
+  assert.throws(() => localCreateTask({ userId: host.id, activityId: activity.id, teamId: joined.team_id, title: "host must be rejected", description: "", requestId: `task-host-create-${suffix}` }), (error: unknown) => error instanceof FormalBoardLocalError && error.status === 403);
+  const task = localCreateTask({ userId: captain.id, activityId: activity.id, teamId: joined.team_id, title: "captain task", description: "", requestId: `task-captain-create-${suffix}` });
+  assert.equal(task.team_id, joined.team_id);
 });
