@@ -126,6 +126,7 @@
 .importRow small { color: var(--pb-muted); font-size: 10px; line-height: 1.5; }
 .visuallyHidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .message { min-height: 21px; margin: 18px 0 0; color: var(--pb-red); font-size: 14px; font-weight: 700; line-height: 1.55; }
+.message:not(:empty) { border-left: 4px solid currentColor; padding: 8px 12px; background: rgba(255, 250, 240, .68); animation: pb-message-in 220ms cubic-bezier(.2, .8, .2, 1) both; }
 
 .authMode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 4px 0 24px; padding: 5px; border: 3px solid var(--pb-ink); border-radius: 9px; background: rgba(255, 255, 255, 0.35); }
 .authMode button { min-height: 38px; border: 0; box-shadow: none; background: transparent; }
@@ -287,6 +288,7 @@
   .primaryButton:disabled { animation: pb-busy 900ms ease-in-out infinite; }
   @keyframes pb-card-in { from { opacity: 0; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes pb-busy { 0%, 100% { box-shadow: 3px 3px 0 var(--pb-ink); } 50% { box-shadow: 6px 7px 0 var(--pb-ink); } }
+  @keyframes pb-message-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
 }
 
 @media (max-width: 760px) {

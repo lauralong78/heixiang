@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
+import { OperationProgress } from "@/components/shell/operation-progress";
 import styles from "../progress-board/progress-board.module.css";
 import { FORMAL_BOARD_POLL_INTERVAL_MS, isCurrentPoll, syncLabel, type SyncState } from "@/lib/formal-board/polling";
 
@@ -551,6 +552,11 @@ export function FormalAuthApp() {
         <span>FORMAL BOARD / AUTH</span>
         <span>DESKTOP FIRST · SERVER SESSION</span>
       </header>
+      <OperationProgress
+        scope="正式看板"
+        syncing={busy || syncState === "syncing"}
+        messages={[message, activityMessage, teamMessage, taskMessage, inviteMessage, contactMessage, auditMessage, attachmentMessage]}
+      />
       <section className={styles.setupShell}>
         <div className={styles.setupIntro}>
           <span className={styles.kicker}>黑箱正式版 · HK-300</span>
