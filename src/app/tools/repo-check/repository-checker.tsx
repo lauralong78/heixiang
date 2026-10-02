@@ -24,24 +24,24 @@ const statusMeta: Record<
   pass: {
     label: "已确认",
     mark: "✓",
-    className: "border-emerald-300 bg-emerald-50 text-emerald-800",
+    className: styles.statusPass,
   },
   fail: {
     label: "缺失",
     mark: "×",
-    className: "border-rose-300 bg-rose-50 text-rose-800",
+    className: styles.statusFail,
   },
   unknown: {
     label: "无法确认",
     mark: "?",
-    className: "border-amber-300 bg-amber-50 text-amber-900",
+    className: styles.statusUnknown,
   },
 };
 
 const priorityMeta: Record<CheckPriority, { label: string; className: string }> = {
-  high: { label: "优先补齐", className: "bg-[#e55e34] text-white" },
-  medium: { label: "建议补齐", className: "bg-[#f2d36b] text-[#4c3b10]" },
-  low: { label: "可选完善", className: "bg-[#dfe5df] text-[#425047]" },
+  high: { label: "优先补齐", className: styles.priorityHigh },
+  medium: { label: "建议补齐", className: styles.priorityMedium },
+  low: { label: "可选完善", className: styles.priorityLow },
 };
 
 type ErrorState = {
@@ -153,23 +153,23 @@ export function RepositoryChecker() {
   }
 
   return (
-    <main className={`${styles.page} text-[#16241d]`}>
+    <main className={styles.page}>
       <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-16">
-        <header className="grid gap-8 border-b-2 border-[#16241d] pb-10 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
+        <header className="grid gap-8 border-b-2 border-[#171717] pb-10 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
           <div>
-            <div className="mb-6 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.22em] text-[#b24b2a]">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#e55e34] shadow-[0_0_0_5px_rgba(229,94,52,0.15)]" />
+            <div className="mb-6 flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.22em] text-[#245ad8]">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#df4b59] shadow-[0_0_0_5px_rgba(223,75,89,0.18)]" />
               黑箱 / 仓库检查 01
             </div>
-            <h1 className="max-w-3xl text-balance font-serif text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-6xl">
+            <h1 className="max-w-3xl text-balance font-sans text-4xl font-black leading-[1.05] tracking-[-0.03em] sm:text-6xl">
               提交前，先看看仓库少了什么。
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-[#4d5b54] sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-7 text-[#635b50] sm:text-lg">
               粘贴公开 GitHub 仓库地址。它只读取仓库信息和 README，
               并把找到的证据、缺项和无法确认的内容分开列出。
             </p>
           </div>
-          <div className="border-l-0 border-[#16241d] font-mono text-xs leading-6 text-[#5f6b65] lg:border-l lg:pl-8">
+          <div className="border-l-0 border-[#171717] font-mono text-xs leading-6 text-[#635b50] lg:border-l lg:pl-8">
             <p>READ ONLY / PUBLIC REPOS</p>
             <p>RULE BASED / NO AI</p>
             <p>PASS · FAIL · UNKNOWN</p>
@@ -182,7 +182,7 @@ export function RepositoryChecker() {
           </h2>
           <form onSubmit={handleSubmit} className="grid gap-3 md:grid-cols-[1fr_auto]">
             <label className="group relative block">
-              <span className="absolute left-5 top-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#748078]">
+              <span className="absolute left-5 top-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-[#635b50]">
                 GitHub repository URL
               </span>
               <input
@@ -193,13 +193,13 @@ export function RepositoryChecker() {
                 value={repositoryUrl}
                 onChange={(event) => setRepositoryUrl(event.target.value)}
                 placeholder="https://github.com/owner/repo"
-                className="h-20 w-full border-2 border-[#16241d] bg-[#fffdf7] px-5 pb-2 pt-8 font-mono text-sm outline-none transition-shadow placeholder:text-[#9aa19c] focus:shadow-[6px_6px_0_#e55e34]"
+                className="h-20 w-full border-2 border-[#171717] bg-[#fffaf1] px-5 pb-2 pt-8 font-mono text-sm outline-none transition-shadow placeholder:text-[#766e62] focus:shadow-[6px_6px_0_#245ad8]"
               />
             </label>
             <button
               type="submit"
               disabled={pending}
-              className="h-20 border-2 border-[#16241d] bg-[#16241d] px-8 font-mono text-sm font-bold uppercase tracking-[0.14em] text-[#fffdf7] transition hover:-translate-y-0.5 hover:bg-[#e55e34] disabled:cursor-wait disabled:opacity-60 md:min-w-44"
+              className="h-20 border-2 border-[#171717] bg-[#ffd735] px-8 font-mono text-sm font-bold uppercase tracking-[0.14em] text-[#171717] transition hover:-translate-y-0.5 hover:bg-[#ffbf00] hover:shadow-[4px_4px_0_#171717] active:translate-x-px active:translate-y-0.5 disabled:cursor-wait disabled:opacity-60 md:min-w-44"
             >
               {pending ? "正在取证…" : "开始检查 →"}
             </button>
@@ -209,7 +209,7 @@ export function RepositoryChecker() {
             {repositoryUrl && (
               <button
                 type="button"
-                className="underline decoration-[#b24b2a] underline-offset-4 hover:text-[#16241d]"
+                className="underline decoration-[#245ad8] underline-offset-4 hover:text-[#245ad8]"
                 onClick={() => {
                   setRepositoryUrl("");
                   setReport(null);
@@ -238,22 +238,22 @@ export function RepositoryChecker() {
         {error && (
           <section
             role="alert"
-            className="mb-10 border-2 border-[#8f2f25] bg-[#fff2ec] p-6 shadow-[6px_6px_0_#8f2f25]"
+            className="mb-10 border-2 border-[#171717] bg-[#fffaf1] p-6 shadow-[6px_6px_0_#df4b59]"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#8f2f25]">
+                <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#df4b59]">
                   {error.code}
                 </p>
                 <h2 className="mt-2 text-xl font-bold">没有完成这次检查</h2>
-            <p className="mt-2 text-[#663b33]">{error.message}</p>
+            <p className="mt-2 text-[#635b50]">{error.message}</p>
             <p className={styles.recovery}><strong>可以这样恢复：</strong> {recoveryHint(error.code)}</p>
               </div>
-              <span className="border border-[#8f2f25] px-3 py-1 font-mono text-xs text-[#8f2f25]">
+              <span className="border-2 border-[#df4b59] px-3 py-1 font-mono text-xs text-[#df4b59]">
                 {error.retryable ? "可重试" : "请修正输入"}
               </span>
             </div>
-            <p className={`${styles.requestId} mt-5 font-mono text-[11px] text-[#8a625a]`}>
+            <p className={`${styles.requestId} mt-5 font-mono text-[11px] text-[#635b50]`}>
               Request ID: {error.requestId}
             </p>
           </section>
@@ -261,10 +261,10 @@ export function RepositoryChecker() {
 
         {report && (
           <div className="animate-[fade-in_350ms_ease-out]">
-            <section className="grid gap-px border-2 border-[#16241d] bg-[#16241d] lg:grid-cols-[1fr_auto]">
-              <div className="bg-[#fffdf7] p-6 sm:p-8">
+            <section className="grid gap-px border-2 border-[#171717] bg-[#171717] shadow-[7px_7px_0_#245ad8] lg:grid-cols-[1fr_auto]">
+              <div className="bg-[#fffaf1] p-6 sm:p-8">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="bg-[#d7ff64] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em]">
+                  <span className="border-2 border-[#171717] bg-[#bfe4ff] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em]">
                     Public repository
                   </span>
                   <span className="font-mono text-xs text-[#6d7771]">
@@ -275,22 +275,22 @@ export function RepositoryChecker() {
                   href={report.repository.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-block break-all font-serif text-3xl font-black underline decoration-[#e55e34] decoration-2 underline-offset-4 hover:text-[#b24b2a] sm:text-4xl"
+                  className="mt-4 inline-block break-all font-sans text-3xl font-black underline decoration-[#df4b59] decoration-2 underline-offset-4 hover:text-[#245ad8] sm:text-4xl"
                 >
                   {report.repository.fullName}
                 </a>
-                <p className="mt-3 max-w-3xl leading-7 text-[#59645e]">
+                <p className="mt-3 max-w-3xl leading-7 text-[#635b50]">
                   {report.repository.description || (report.source === "public-page" ? "GitHub API 被限流；当前仅从公开页面读取可验证信息。" : "仓库未填写描述。")}
                 </p>
               </div>
-              <div className="grid grid-cols-3 bg-[#fffdf7] lg:min-w-72">
+              <div className="grid grid-cols-3 bg-[#fffaf1] lg:min-w-72">
                 {(["pass", "fail", "unknown"] as const).map((status) => (
                   <div
                     key={status}
-                    className="flex min-w-0 flex-col items-center justify-center border-r border-[#cad0c8] p-5 last:border-r-0"
+                    className="flex min-w-0 flex-col items-center justify-center border-r border-[#8a8173] p-5 last:border-r-0"
                   >
-                    <strong className="font-serif text-4xl">{report.totals[status]}</strong>
-                    <span className="mt-1 text-center font-mono text-[10px] uppercase tracking-wide text-[#67716b]">
+                    <strong className="font-sans text-4xl">{report.totals[status]}</strong>
+                    <span className="mt-1 text-center font-mono text-[10px] uppercase tracking-wide text-[#635b50]">
                       {statusMeta[status].label}
                     </span>
                   </div>
@@ -298,21 +298,21 @@ export function RepositoryChecker() {
               </div>
             </section>
 
-            <section className="mt-8 border-2 border-[#16241d] bg-[#fffdf7] p-6 sm:p-8" aria-labelledby="missing-heading">
-              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#89938d] pb-3">
+            <section className="mt-8 border-2 border-[#171717] bg-[#fffaf1] p-6 shadow-[6px_6px_0_#ff91b7] sm:p-8" aria-labelledby="missing-heading">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[#8a8173] pb-3">
                 <div>
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#b24b2a]">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#245ad8]">
                     Action list / next moves
                   </p>
-                  <h2 id="missing-heading" className="mt-1 font-serif text-3xl font-black">
+                  <h2 id="missing-heading" className="mt-1 font-sans text-3xl font-black">
                     你还缺什么
                   </h2>
                 </div>
-                <span className="font-mono text-xs text-[#66716a]">{report.missing.length} 项待补齐</span>
+                <span className="font-mono text-xs text-[#635b50]">{report.missing.length} 项待补齐</span>
               </div>
 
               {report.missing.length === 0 ? (
-                <p className="mt-5 border border-emerald-300 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                <p className="mt-5 border-2 border-[#171717] bg-[#d9f3d5] p-4 text-sm leading-6 text-[#171717]">
                   当前规则范围内没有发现缺失项。仍建议人工核对演示可用性、功能真实性和提交格式。
                 </p>
               ) : (
@@ -320,22 +320,22 @@ export function RepositoryChecker() {
                   {report.missing.map((item) => {
                     const priority = priorityMeta[item.priority];
                     return (
-                      <article key={item.id} className="border border-[#c2c8c2] bg-[#f6f3eb] p-4 sm:p-5">
+                      <article key={item.id} className="border-2 border-[#171717] bg-[#f4eddf] p-4 shadow-[4px_4px_0_#bfe4ff] sm:p-5">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <h3 className="text-lg font-bold">{item.label}</h3>
                           <span className={`px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${priority.className}`}>
                             {priority.label}
                           </span>
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-[#56615b]">{item.summary}</p>
+                        <p className="mt-2 text-sm leading-6 text-[#635b50]">{item.summary}</p>
                         {item.evidence.length > 0 && (
-                          <p className="mt-2 font-mono text-[11px] text-[#68736d]">
+                          <p className="mt-2 font-mono text-[11px] text-[#635b50]">
                             已找到 {item.evidence.length} 条相关线索，但未达到该项最低证据要求。
                           </p>
                         )}
                         {item.suggestion && (
-                          <p className="mt-3 border-t border-dashed border-[#c2c8c2] pt-3 text-sm leading-6 text-[#735140]">
-                            <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#b24b2a]">
+                          <p className="mt-3 border-t border-dashed border-[#8a8173] pt-3 text-sm leading-6 text-[#635b50]">
+                            <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#245ad8]">
                               下一步
                             </span>
                             {item.suggestion}
@@ -346,7 +346,7 @@ export function RepositoryChecker() {
                   })}
                 </div>
               )}
-              <p className="mt-4 text-xs leading-5 text-[#68736d]">
+              <p className="mt-4 text-xs leading-5 text-[#635b50]">
                 “缺失”表示规则没有在 README 中找到足够证据；“无法确认”不会被误算成缺失。
               </p>
               {report.checks.some((check) => check.status === "unknown") && (
@@ -363,11 +363,11 @@ export function RepositoryChecker() {
             </section>
 
             <section className="mt-8 grid gap-5" aria-labelledby="result-heading">
-              <div className="flex items-end justify-between border-b border-[#89938d] pb-3">
-                <h2 id="result-heading" className="font-serif text-3xl font-black">
+              <div className="flex items-end justify-between border-b-2 border-[#8a8173] pb-3">
+                <h2 id="result-heading" className="font-sans text-3xl font-black">
                   证据检查单
                 </h2>
-                <span className="hidden font-mono text-xs text-[#66716a] sm:block">
+                <span className="hidden font-mono text-xs text-[#635b50] sm:block">
                   {report.checks.length} CHECKS / {formatDate(report.checkedAt)}
                 </span>
               </div>
@@ -377,9 +377,9 @@ export function RepositoryChecker() {
                 return (
                   <article
                     key={check.id}
-                    className="grid gap-5 border border-[#aeb6af] bg-[#fffdf7] p-5 transition hover:border-[#16241d] sm:grid-cols-[3rem_1fr] sm:p-6"
+                    className="grid gap-5 border-2 border-[#171717] bg-[#fffaf1] p-5 shadow-[5px_5px_0_#bfe4ff] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#245ad8] sm:grid-cols-[3rem_1fr] sm:p-6"
                   >
-                    <div className="flex h-12 w-12 items-center justify-center border border-[#16241d] font-mono text-lg font-bold">
+                    <div className="flex h-12 w-12 items-center justify-center border-2 border-[#171717] bg-[#ffd735] font-mono text-lg font-bold">
                       {String(index + 1).padStart(2, "0")}
                     </div>
                     <div>
@@ -391,16 +391,16 @@ export function RepositoryChecker() {
                           <span aria-hidden>{meta.mark}</span> {meta.label}
                         </span>
                       </div>
-                      <p className="mt-3 leading-6 text-[#56615b]">{check.summary}</p>
+                      <p className="mt-3 leading-6 text-[#635b50]">{check.summary}</p>
 
                       {check.evidence.length > 0 && (
                         <div className="mt-4 grid gap-2">
                           {check.evidence.map((evidence) => (
                             <blockquote
                               key={`${evidence.line}-${evidence.excerpt}`}
-                              className="grid gap-2 border-l-2 border-[#e55e34] bg-[#f3f0e8] px-4 py-3 font-mono text-xs leading-5 text-[#46514b] sm:grid-cols-[4rem_1fr]"
+                              className="grid gap-2 border-2 border-[#171717] bg-[#f4eddf] px-4 py-3 font-mono text-xs leading-5 text-[#635b50] sm:grid-cols-[4rem_1fr]"
                             >
-                              <span className="font-bold text-[#b24b2a]">L{evidence.line}</span>
+                              <span className="font-bold text-[#245ad8]">L{evidence.line}</span>
                               <span className="break-words">{evidence.excerpt}</span>
                             </blockquote>
                           ))}
@@ -408,8 +408,8 @@ export function RepositoryChecker() {
                       )}
 
                       {check.suggestion && (
-                        <p className="mt-4 border-t border-dashed border-[#c2c8c2] pt-3 text-sm leading-6 text-[#735140]">
-                          <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#b24b2a]">
+                        <p className="mt-4 border-t border-dashed border-[#8a8173] pt-3 text-sm leading-6 text-[#635b50]">
+                          <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#245ad8]">
                             改进建议
                           </span>
                           {check.suggestion}
@@ -421,15 +421,15 @@ export function RepositoryChecker() {
               })}
             </section>
 
-            <section className="mt-8 grid gap-px border-2 border-[#16241d] bg-[#16241d] sm:grid-cols-2 lg:grid-cols-4">
+            <section className="mt-8 grid gap-px border-2 border-[#171717] bg-[#171717] shadow-[7px_7px_0_#ffd735] sm:grid-cols-2 lg:grid-cols-4">
               {[
                 ["主语言", report.repository.language || "未标记"],
                 ["许可证", report.repository.license || "未检测到"],
                 ["默认分支", report.repository.defaultBranch || "未确认"],
                 ["仓库活跃", report.repository.stars === null || report.repository.forks === null ? "公开页面未确认" : `★ ${report.repository.stars}  ·  Fork ${report.repository.forks}`],
               ].map(([label, value]) => (
-                <div key={label} className="bg-[#d7ff64] p-5">
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#536329]">
+                <div key={label} className="bg-[#ffd735] p-5">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#635b50]">
                     {label}
                   </p>
                   <p className="mt-2 truncate font-mono text-sm font-bold">{value}</p>
@@ -437,7 +437,7 @@ export function RepositoryChecker() {
               ))}
             </section>
 
-            <p className="mt-5 text-xs leading-5 text-[#68736d]">
+            <p className="mt-5 text-xs leading-5 text-[#635b50]">
               边界：结果来自规则匹配，只证明 README 中找到或未找到相关表述，
               不代表功能真实可用或项目质量已通过验收。
             </p>
