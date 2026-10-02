@@ -13,11 +13,11 @@ export default function Home() {
               <span>现场工具。</span>
             </h1>
             <p className="hero-description">
-              做名片、找队友、查仓库、盯进度、投票签到，或者整理 README。每个工具都能单独使用，不用登录，也不用按固定流程走。
+              面向社团招新面试的四个独立入口：看板、投票墙、GitHub 检查和项目文档。它们都能在本机直接打开，不需要按固定流程走。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="#tools" className="primary-action focus-ring">查看全部工具</Link>
-              <Link href="/tools/repo-check" className="secondary-action focus-ring">检查 GitHub 仓库</Link>
+              <Link href="/tools/formal-board" className="secondary-action focus-ring">打开正式看板</Link>
             </div>
           </div>
 
@@ -27,9 +27,7 @@ export default function Home() {
               <strong>{availableToolCount.toString().padStart(2, "0")}</strong>
             </div>
             <div className="readiness-body">
-              {tools
-                .filter((tool) => tool.status === "available")
-                .map((tool) => (
+              {tools.map((tool) => (
                   <Link key={tool.slug} href={tool.href ?? "/"} className="ready-row focus-ring">
                     <span>{tool.title}</span>
                     <span aria-hidden="true">↗</span>
@@ -37,9 +35,7 @@ export default function Home() {
                 ))}
             </div>
             <p className="readiness-note">
-              {availableToolCount === tools.length
-                ? `全部 ${tools.length} 个工具都可以打开；涉及多人身份的功能为同一浏览器本机演示。`
-                : `另外 ${tools.length - availableToolCount} 项还在计划中，暂时不能打开。`}
+              {`四项工具均为本地可用；正式看板和投票墙是本机单实例，不是公网协作。`}
             </p>
           </aside>
         </div>

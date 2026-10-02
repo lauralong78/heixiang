@@ -10,105 +10,64 @@ export type HackKitTool = {
   status: ToolStatus;
   href?: string;
   tags: string[];
+  boundary: string;
 };
 
 export const toolCategories = ["全部", "协作", "交付", "现场", "内容"] as const;
-
 export type ToolCategoryFilter = (typeof toolCategories)[number];
 
+/** 当前招新演示版目录：四项都对应真实存在、可直接打开的本地工具。 */
 export const tools: HackKitTool[] = [
-  {
-    slug: "card",
-    title: "组队名片",
-    description: "填好角色、技能和想做的方向，生成一张可以下载的 PNG 名片。",
-    category: "协作",
-    status: "available",
-    href: "/tools/card",
-    tags: ["组队", "个人资料", "PNG", "导出"],
-  },
-  {
-    slug: "repo-check",
-    title: "仓库检查器",
-    description: "检查公开 GitHub 仓库的 README 和提交材料，列出证据、缺项和无法确认的内容。",
-    category: "交付",
-    status: "available",
-    href: "/tools/repo-check",
-    tags: ["GitHub", "README", "提交", "证据"],
-  },
-  {
-    slug: "team-match",
-    title: "队友匹配",
-    description: "根据成员自愿公开的技能和兴趣找搭档，说明推荐依据，并在本机记录邀请状态。",
-    category: "协作",
-    status: "available",
-    href: "/tools/team-match",
-    tags: ["匹配", "技能互补", "邀请", "本机演示"],
-  },
-  {
-    slug: "progress-board",
-    title: "进度看板",
-    description: "记录活动截止时间、队伍任务和完成进度，可导出或恢复本地 JSON 备份。",
-    category: "现场",
-    status: "available",
-    href: "/tools/progress-board",
-    tags: ["倒计时", "看板", "进度", "JSON"],
-  },
   {
     slug: "formal-board",
     title: "正式进度看板",
-    description: "使用自选 ID、服务端会话和活动内权限测试正式协作看板；当前是本地正式服务测试入口。",
+    description: "用自选 ID 和密码进入服务端会话，管理活动、队伍、任务与邀请。",
     category: "协作",
     status: "available",
     href: "/tools/formal-board",
-    tags: ["正式版", "账号", "活动", "服务端"],
-  },
-  {
-    slug: "icebreaker",
-    title: "现场破冰",
-    description: "按昵称、技能和兴趣安排轮换配对，尽量减少重复，并说明配对依据。",
-    category: "现场",
-    status: "available",
-    href: "/tools/icebreaker",
-    tags: ["破冰", "配对", "公平轮换", "交流"],
-  },
-  {
-    slug: "vote-wall",
-    title: "观众投票墙",
-    description: "建立作品墙并切换本机身份投票，处理重复投票、隐藏结果和作废记录。",
-    category: "现场",
-    status: "available",
-    href: "/tools/vote-wall",
-    tags: ["投票", "作品", "结果", "本机演示"],
+    tags: ["账号", "活动", "队伍", "任务"],
+    boundary: "本机单实例；不是跨设备协作或公开互联网邀请。",
   },
   {
     slug: "formal-vote-wall",
     title: "正式投票墙",
-    description: "在受邀活动中创建、开放和参与投票；账号与权限由服务端复核，当前用于本地正式服务测试。",
+    description: "在同一正式会话下管理活动、成员与队伍候选，记录单票去重后的结果状态。",
     category: "现场",
     status: "available",
     href: "/tools/formal-vote-wall",
-    tags: ["正式版", "投票", "权限", "服务端"],
+    tags: ["成员", "候选", "单票", "结果"],
+    boundary: "本机单实例；不支持跨设备投票或线上公开活动。",
   },
   {
-    slug: "checkin-claim",
-    title: "签到与领取",
-    description: "建立名单并发放本地凭证，分别记录签到和领取，重复操作会明确提示。",
-    category: "现场",
+    slug: "repo-check",
+    title: "GitHub 仓库检查",
+    description: "输入公开 github.com 仓库地址，读取只读证据并输出 pass、fail 或 unknown。",
+    category: "交付",
     status: "available",
-    href: "/tools/checkin-claim",
-    tags: ["签到", "凭证", "领取", "CSV"],
+    href: "/tools/repo-check",
+    tags: ["公开仓库", "证据", "限流", "错误态"],
+    boundary: "只读检查公开仓库；不保证仓库代码实际可运行。",
   },
   {
     slug: "docs-assistant",
     title: "项目文档助手",
-    description: "用已经确认的项目资料生成 README 和一页说明，缺的信息会单独列出。",
+    description: "根据你输入的项目资料生成或编辑 README 与一页说明，并列出缺失清单。",
     category: "内容",
     status: "available",
     href: "/tools/docs-assistant",
-    tags: ["README", "项目说明", "缺失检查", "Markdown"],
+    tags: ["README", "一页说明", "缺失清单", "Markdown"],
+    boundary: "当前只处理用户输入，不调用 AI 或网络；支持复制与浏览器下载。",
   },
 ];
 
-export const availableToolCount = tools.filter(
-  (tool) => tool.status === "available",
-).length;
+/** 旧工具保留给既有路由与源码使用，但不进入当前招新目录或计数。 */
+export const legacyTools: HackKitTool[] = [
+  { slug: "card", title: "组队名片", description: "旧版工具，路由保留。", category: "协作", status: "available", href: "/tools/card", tags: [], boundary: "不在当前目录。" },
+  { slug: "progress-board", title: "进度看板", description: "旧版工具，路由保留。", category: "现场", status: "available", href: "/tools/progress-board", tags: [], boundary: "不在当前目录。" },
+  { slug: "icebreaker", title: "现场破冰", description: "旧版工具，路由保留。", category: "现场", status: "available", href: "/tools/icebreaker", tags: [], boundary: "不在当前目录。" },
+  { slug: "team-match", title: "队友匹配", description: "旧版工具，路由保留。", category: "协作", status: "available", href: "/tools/team-match", tags: [], boundary: "不在当前目录。" },
+  { slug: "vote-wall", title: "观众投票墙", description: "旧版工具，路由保留。", category: "现场", status: "available", href: "/tools/vote-wall", tags: [], boundary: "不在当前目录。" },
+  { slug: "checkin-claim", title: "签到与领取", description: "旧版工具，路由保留。", category: "现场", status: "available", href: "/tools/checkin-claim", tags: [], boundary: "不在当前目录。" },
+];
+
+export const availableToolCount = tools.filter((tool) => tool.status === "available").length;
