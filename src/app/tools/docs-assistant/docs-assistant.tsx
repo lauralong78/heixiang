@@ -13,7 +13,6 @@ import {
   safeFileStem,
   validateUrl,
 } from "@/lib/docs-assistant/generator";
-import { generateReadmePrompt } from "@/lib/docs-assistant/prompt";
 import type {
   DocsAssistantDraft,
   GeneratedDocuments,
@@ -91,8 +90,8 @@ export function DocsAssistant() {
   const [hydrated, setHydrated] = useState(false);
   const [status, setStatus] = useState("");
   const [storageWarning, setStorageWarning] = useState("");
+  const [busyAction, setBusyAction] = useState<"copy" | "download" | null>(null);
   const missingItems = useMemo(() => getMissingItems(draft), [draft]);
-  const aiPrompt = useMemo(() => generateReadmePrompt(draft), [draft]);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,33 +180,23 @@ export function DocsAssistant() {
   }
 
   async function copyCurrent() {
+    setBusyAction("copy");
     try {
       await navigator.clipboard.writeText(documents[activeDocument]);
       setStatus(`${documentLabel(activeDocument)}的当前编辑版本已复制。`);
     } catch {
       setStatus("复制失败：浏览器未授予剪贴板权限，请在编辑区手动复制。");
+    } finally {
+      window.setTimeout(() => setBusyAction(null), 500);
     }
-  }
-
-  async function copyAiPrompt() {
-    try {
-      await navigator.clipboard.writeText(aiPrompt);
-      setStatus("给外部 AI 的 README 提示词已复制。请粘贴到能够访问项目文件的 AI 中使用。");
-    } catch {
-      setStatus("复制失败：浏览器未授予剪贴板权限，请展开提示词后手动复制。");
-    }
-  }
-
-  function downloadAiPrompt() {
-    const fileName = `${safeFileStem(draft.projectName)}-README-AI-提示词.txt`;
-    downloadText(fileName, aiPrompt, "text/plain;charset=utf-8");
-    setStatus(`${fileName} 已下载。`);
   }
 
   function download(key: DocumentKey) {
+    setBusyAction("download");
     const fileName = key === "readme" ? "README.md" : `${safeFileStem(draft.projectName)}-一页说明.md`;
     downloadText(fileName, documents[key], "text/markdown;charset=utf-8");
     setStatus(`${fileName} 已下载，内容为当前编辑版本。`);
+    window.setTimeout(() => setBusyAction(null), 500);
   }
 
   const currentText = documents[activeDocument];
@@ -239,27 +228,6 @@ export function DocsAssistant() {
             {storageWarning || status}
           </div>
         )}
-
-        <section className={styles.promptPanel} aria-labelledby="ai-prompt-title">
-          <div className={styles.promptIntro}>
-            <div>
-              <span className={styles.promptLabel}>HANDOFF / 给你的 AI</span>
-              <h2 id="ai-prompt-title">让你常用的 AI 帮忙查项目</h2>
-              <p>复制这段提示词，交给能读取项目目录的 AI。它会先查代码和配置，再按这张表整理 README；本站不会读取你的项目。</p>
-            </div>
-            <div className={styles.promptActions}>
-              <button type="button" onClick={copyAiPrompt}>复制提示词</button>
-              <button type="button" className={styles.promptDownload} onClick={downloadAiPrompt}>下载 .txt</button>
-            </div>
-          </div>
-          <details className={styles.promptDetails}>
-            <summary><span>预览完整提示词</span><small>{aiPrompt.length.toLocaleString("zh-CN")} 字符</small></summary>
-            <div className={styles.promptPreview}>
-              <p>使用前请确认你的 AI 已打开或能够读取目标项目目录；这份提示词本身不会授予文件权限。</p>
-              <textarea aria-label="给外部 AI 的 README 生成提示词" readOnly spellCheck={false} value={aiPrompt} />
-            </div>
-          </details>
-        </section>
 
         <div className={styles.workspace}>
           <form className={styles.formPanel} onSubmit={(event) => event.preventDefault()}>
@@ -343,7 +311,7 @@ export function DocsAssistant() {
         <section className={styles.outputPanel} aria-labelledby="output-title">
           <div className={styles.outputHeader}>
             <div><span>OUTPUT / 交付件</span><h2 id="output-title">编辑与安全预览</h2></div>
-            <button type="button" className={styles.regenerateButton} onClick={regenerate}>根据表单重新生成</button>
+            <button type="button" className={styles.regenerateButton} onClick={regenerate} aria-label="根据表单重新生成两份文档">重新生成两份文档</button>
           </div>
           <p className={styles.regenerateWarning}>重新生成会覆盖两份文档的手动修改。复制和下载始终使用当前编辑版本。</p>
 
@@ -392,8 +360,8 @@ export function DocsAssistant() {
           </div>
 
           <div className={styles.actions}>
-            <button type="button" onClick={copyCurrent}>复制当前文档</button>
-            <button type="button" onClick={() => download(activeDocument)}>下载 {activeDocument === "readme" ? "README.md" : "一页说明.md"}</button>
+            <button type="button" onClick={copyCurrent} disabled={busyAction !== null} aria-busy={busyAction === "copy"}>{busyAction === "copy" ? "复制中…" : "复制当前文档"}</button>
+            <button type="button" onClick={() => download(activeDocument)} disabled={busyAction !== null} aria-busy={busyAction === "download"}>{busyAction === "download" ? "准备下载…" : `下载 ${activeDocument === "readme" ? "README.md" : "一页说明.md"}`}</button>
             <button type="button" className={styles.secondaryDownload} onClick={() => download(activeDocument === "readme" ? "onePager" : "readme")}>下载另一份</button>
           </div>
         </section>
@@ -413,7 +381,7 @@ function downloadText(fileName: string, content: string, type: string) {
   anchor.href = href;
   anchor.download = fileName;
   anchor.click();
-  URL.revokeObjectURL(href);
+  window.setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
 
 function TextField({ id, label, value, placeholder, limit, multiline = false, inputMode, error, onChange }: {
