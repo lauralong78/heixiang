@@ -13,6 +13,7 @@ import {
   safeFileStem,
   validateUrl,
 } from "@/lib/docs-assistant/generator";
+import { generateReadmePrompt } from "@/lib/docs-assistant/prompt";
 import type {
   DocsAssistantDraft,
   GeneratedDocuments,
@@ -92,6 +93,7 @@ export function DocsAssistant() {
   const [storageWarning, setStorageWarning] = useState("");
   const [busyAction, setBusyAction] = useState<"copy" | "download" | null>(null);
   const missingItems = useMemo(() => getMissingItems(draft), [draft]);
+  const aiPrompt = useMemo(() => generateReadmePrompt(draft), [draft]);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +193,21 @@ export function DocsAssistant() {
     }
   }
 
+  async function copyAiPrompt() {
+    try {
+      await navigator.clipboard.writeText(aiPrompt);
+      setStatus("给 Agent 的 README 提示词已复制；本站不会读取项目目录或调用 AI。");
+    } catch {
+      setStatus("复制失败：浏览器未授予剪贴板权限，请在提示词预览中手动复制。");
+    }
+  }
+
+  function downloadAiPrompt() {
+    const fileName = `${safeFileStem(draft.projectName)}-README-Agent-提示词.txt`;
+    downloadText(fileName, aiPrompt, "text/plain;charset=utf-8");
+    setStatus(`${fileName} 已下载，提示词内容来自当前表单事实。`);
+  }
+
   function download(key: DocumentKey) {
     setBusyAction("download");
     const fileName = key === "readme" ? "README.md" : `${safeFileStem(draft.projectName)}-一页说明.md`;
@@ -228,6 +245,27 @@ export function DocsAssistant() {
             {storageWarning || status}
           </div>
         )}
+
+        <section className={styles.promptPanel} aria-labelledby="agent-prompt-title">
+          <div className={styles.promptIntro}>
+            <div>
+              <span className={styles.promptLabel}>HANDOFF / 给 AGENT</span>
+              <h2 id="agent-prompt-title">让能读项目目录的 Agent 帮你核对 README</h2>
+              <p>提示词会带上当前表单事实和安全边界。它不会在本站执行，也不会授予 Agent 任何文件权限；复制后请交给你已经打开目标项目的 Agent。</p>
+            </div>
+            <div className={styles.promptActions}>
+              <button type="button" onClick={copyAiPrompt}>复制给 Agent</button>
+              <button type="button" className={styles.promptDownload} onClick={downloadAiPrompt}>下载提示词</button>
+            </div>
+          </div>
+          <details className={styles.promptDetails}>
+            <summary><span>预览完整提示词</span><small>{aiPrompt.length.toLocaleString("zh-CN")} 字符</small></summary>
+            <div className={styles.promptPreview}>
+              <p>当前页面不会读取项目目录；Agent 是否能访问文件，取决于你使用的外部工具权限。</p>
+              <textarea aria-label="给 Agent 的 README 提示词" readOnly spellCheck={false} value={aiPrompt} />
+            </div>
+          </details>
+        </section>
 
         <div className={styles.workspace}>
           <form className={styles.formPanel} onSubmit={(event) => event.preventDefault()}>

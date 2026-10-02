@@ -37,6 +37,28 @@
 .status, .warning { margin: 1rem 0 0; padding: .8rem 1rem; border: 3px solid var(--ink); background: var(--yellow); font-weight: 700; line-height: 1.5; box-shadow: 4px 4px 0 var(--ink); }
 .warning { background: #ffe3e6; color: #8d2633; }
 
+.promptPanel { margin-top: 1.8rem; border: 3px solid var(--ink); background: var(--sheet); box-shadow: 6px 6px 0 var(--pink); }
+.promptIntro { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.25rem 1.35rem; }
+.promptIntro > div:first-child { max-width: 58rem; }
+.promptLabel { display: block; margin-bottom: .4rem; color: #245ad8; font: 800 .68rem/1.3 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .12em; }
+.promptIntro h2 { margin: 0; font-size: clamp(1.35rem, 2.4vw, 2rem); line-height: 1.15; letter-spacing: -.045em; }
+.promptIntro p { max-width: 70ch; margin: .65rem 0 0; color: var(--muted); font-size: .8rem; line-height: 1.65; }
+.promptActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .65rem; }
+.promptActions button { min-height: 44px; border: 3px solid var(--ink); padding: .65rem .9rem; color: var(--ink); background: var(--yellow); font: 800 .75rem/1.2 "Microsoft YaHei", sans-serif; cursor: pointer; transition: transform 150ms cubic-bezier(.2,.8,.2,1), box-shadow 150ms ease, background-color 150ms ease; }
+.promptActions button:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); background: var(--blue); }
+.promptActions button:active { transform: translate(1px, 2px) scale(.98); box-shadow: 1px 1px 0 var(--ink); }
+.promptActions .promptDownload { background: var(--green); }
+.promptDetails { border-top: 3px solid var(--ink); }
+.promptDetails summary { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 1.35rem; color: var(--ink); background: var(--blue); font-size: .78rem; font-weight: 800; cursor: pointer; list-style: none; }
+.promptDetails summary::-webkit-details-marker { display: none; }
+.promptDetails summary::after { width: .55rem; height: .55rem; margin-left: auto; border-right: 3px solid currentColor; border-bottom: 3px solid currentColor; content: ""; transform: rotate(45deg); transition: transform 160ms ease; }
+.promptDetails[open] summary::after { transform: rotate(225deg); }
+.promptDetails summary small { color: var(--muted); font: 700 .65rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.promptPreview { padding: 1rem 1.35rem 1.35rem; background: #202020; }
+.promptPreview p { margin: 0 0 .75rem; color: var(--sheet); font-size: .75rem; line-height: 1.6; }
+.promptPreview textarea { width: 100%; min-height: 25rem; box-sizing: border-box; border: 2px solid var(--sheet); padding: 1rem; color: var(--sheet); background: #303030; font: .75rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; resize: vertical; }
+.promptPreview textarea:focus-visible { outline: 4px solid var(--yellow); outline-offset: 2px; }
+
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 18.5rem; gap: 1.8rem; align-items: start; margin-top: 2rem; }
 .formPanel, .checklistPanel, .outputPanel { border: 3px solid var(--ink); background: var(--sheet); box-shadow: 6px 6px 0 var(--ink); }
 .panelTitle, .outputHeader { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.15rem 1.35rem; border-bottom: 3px solid var(--ink); }
@@ -128,6 +150,8 @@
   .heroMeta { width: min(25rem, 100%); }
   .workspace { grid-template-columns: 1fr; }
   .checklistPanel { position: static; max-height: none; }
+  .promptIntro { align-items: flex-start; flex-direction: column; }
+  .promptActions { justify-content: flex-start; }
 }
 
 @media (max-width: 720px) {
@@ -135,6 +159,10 @@
   .hero { padding: 1.4rem 1.2rem 1.8rem; }
   .hero h1 { font-size: clamp(2.8rem, 13vw, 4.2rem); }
   .noticeRow .saveState { width: 100%; margin-left: 0; padding-left: 0; border: 0; }
+  .promptIntro, .promptDetails summary { padding-inline: 1rem; }
+  .promptActions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .promptActions button { width: 100%; }
+  .promptPreview { padding-inline: 1rem; }
   .panelTitle, .outputHeader { align-items: flex-start; }
   .outputHeader { flex-direction: column; }
   .regenerateButton { width: 100%; }
