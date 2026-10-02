@@ -35,19 +35,13 @@ function ToolCard({ tool, index }: { tool: HackKitTool; index: number }) {
 }
 
 export function ToolDirectory({ tools }: ToolDirectoryProps) {
-  const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ToolCategoryFilter>("全部");
 
   const visibleTools = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
-    return tools.filter((tool) => {
-      const matchesCategory = category === "全部" || tool.category === category;
-      const searchText = [tool.title, tool.description, tool.category, tool.boundary, ...tool.tags].join(" ").toLocaleLowerCase("zh-CN");
-      return matchesCategory && searchText.includes(normalizedQuery);
-    });
-  }, [category, query, tools]);
+    return tools.filter((tool) => category === "全部" || tool.category === category);
+  }, [category, tools]);
 
-  const resetFilters = () => { setQuery(""); setCategory("全部"); };
+  const resetFilters = () => setCategory("全部");
 
   return (
     <section id="tools" className="tool-directory" aria-labelledby="tools-title">
@@ -59,12 +53,7 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
         <p>每张卡都是独立入口。当前四项均为本地可用，不代表已经部署到公网。</p>
       </div>
 
-      <div className="directory-controls" role="search" aria-label="筛选工具">
-        <label className="search-field">
-          <span className="sr-only">搜索工具</span>
-          <span className="search-prefix" aria-hidden="true">/</span>
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索工具、场景或关键词" className="search-input" />
-        </label>
+      <div className="directory-controls" aria-label="按分类筛选">
         <div className="category-filter" aria-label="按分类筛选">
           {toolCategories.map((item) => (
             <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)} className="category-button focus-ring">{item}</button>
@@ -74,7 +63,7 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
 
       <div className="directory-meta">
         <p aria-live="polite">显示 {visibleTools.length} / {tools.length} 项 · 全部是本地可用</p>
-        {(query || category !== "全部") && <button type="button" onClick={resetFilters} className="reset-button focus-ring">清除筛选</button>}
+        {category !== "全部" && <button type="button" onClick={resetFilters} className="reset-button focus-ring">清除筛选</button>}
       </div>
 
       {visibleTools.length > 0 ? (
@@ -83,7 +72,7 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
         <div className="empty-state" role="status">
           <p className="empty-stamp">NO MATCH</p>
           <p className="empty-title">没有匹配的工具</p>
-          <p className="empty-copy">换一个关键词，或者清除分类条件。目录不会把路线图或旧工具混进来。</p>
+          <p className="empty-copy">清除分类条件即可查看全部四项工具。目录不会把路线图或旧工具混进来。</p>
           <button type="button" onClick={resetFilters} className="empty-action focus-ring">查看四项工具</button>
         </div>
       )}

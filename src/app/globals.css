@@ -90,8 +90,7 @@ button, input { font: inherit; }
 
 .skip-link:focus { transform: translateY(0); }
 
-.focus-ring:focus-visible,
-.search-input:focus-visible {
+.focus-ring:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
@@ -302,39 +301,11 @@ button, input { font: inherit; }
 }
 
 .directory-controls {
-  display: grid;
-  grid-template-columns: minmax(16rem, 1fr) auto;
-  gap: 1rem;
+  display: flex;
+  justify-content: flex-end;
   border-block: 1px solid var(--line-strong);
   padding-block: 1rem;
 }
-
-.search-field {
-  display: flex;
-  min-height: 3rem;
-  align-items: center;
-  border: 1px solid var(--line);
-  background: var(--surface);
-}
-
-.search-prefix {
-  padding-left: 1rem;
-  color: var(--accent);
-  font-family: var(--font-geist-mono), monospace;
-  font-weight: 750;
-}
-
-.search-input {
-  min-width: 0;
-  flex: 1;
-  border: 0;
-  background: transparent;
-  padding: 0.75rem 1rem 0.75rem 0.55rem;
-  color: var(--text);
-  outline: none;
-}
-
-.search-input::placeholder { color: var(--text-faint); opacity: 1; }
 
 .category-filter {
   display: flex;
@@ -480,7 +451,6 @@ button, input { font: inherit; }
   .hero-copy { padding: 4rem 0 3.25rem; }
   .hero-title { max-width: 11ch; font-size: clamp(2.9rem, 11vw, 4.5rem); }
   .readiness-panel { margin-bottom: 2rem; box-shadow: 0.5rem 0.5rem 0 var(--surface-strong); }
-  .directory-controls { grid-template-columns: 1fr; }
   .category-filter { padding-bottom: 0.2rem; }
 }
 
@@ -551,9 +521,6 @@ body {
 .directory-heading > p { max-width: 32ch; margin: 0; font-size: 14px; line-height: 1.7; }
 .directory-kicker, .tool-category, .directory-meta, .tool-card-footer li, .empty-stamp { color: #245ad8; font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
 .directory-controls { border-block: 3px solid var(--paper-ink); padding-block: 14px; }
-.search-field { border: 3px solid var(--paper-ink); background: var(--paper-card); }
-.search-prefix { color: #245ad8; }
-.search-input::placeholder { color: #766e62; }
 .category-button { border-color: var(--paper-ink); background: var(--paper-card); color: var(--paper-muted); font-weight: 800; }
 .category-button:hover, .category-button[aria-pressed="true"] { background: var(--paper-yellow); color: var(--paper-ink); }
 .directory-meta { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; color: var(--paper-muted); }
