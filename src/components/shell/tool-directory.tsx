@@ -11,7 +11,7 @@ function ToolCard({ tool, index }: { tool: HackKitTool; index: number }) {
     <>
       <div className="tool-card-topline">
         <span className="tool-category">{tool.category}</span>
-        <span className="status-live">本地可用</span>
+        <span className="status-live">可用</span>
       </div>
       <div className="tool-card-copy">
         <h3>{tool.title}</h3>
@@ -61,7 +61,7 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
       </div>
 
       <div className="directory-meta">
-        <p aria-live="polite">显示 {visibleTools.length} / {tools.length} 项 · 全部是本地可用</p>
+        <p aria-live="polite">显示 {visibleTools.length} / {tools.length} 项</p>
         {category !== "全部" && <button type="button" onClick={resetFilters} className="reset-button focus-ring">清除筛选</button>}
       </div>
 

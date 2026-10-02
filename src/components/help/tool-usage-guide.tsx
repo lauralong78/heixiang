@@ -9,10 +9,12 @@ export type ToolUsageGuideProps = {
   intro: string;
   steps: Array<{ title: string; detail: string }>;
   note: string;
+  details?: Array<{ heading: string; items: Array<{ title: string; detail: string }> }>;
 };
 
-export function ToolUsageGuide({ title, intro, steps, note }: ToolUsageGuideProps) {
+export function ToolUsageGuide({ title, intro, steps, note, details }: ToolUsageGuideProps) {
   const [open, setOpen] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -95,18 +97,46 @@ export function ToolUsageGuide({ title, intro, steps, note }: ToolUsageGuideProp
         </button>
       </div>
       <div className={styles.content}>
-        <p className={styles.eyebrow}>第一次使用？</p>
-        <h2 id={`${title}-guide-title`}>{title}怎么用</h2>
-        <p className={styles.intro}>{intro}</p>
-        <ol>
-          {steps.map((step) => (
-            <li key={step.title}>
-              <strong>{step.title}</strong>
-              <span>{step.detail}</span>
-            </li>
-          ))}
-        </ol>
-        <p className={styles.note}><strong>提醒</strong>{note}</p>
+        {showDetails && details ? (
+          <>
+            <div className={styles.detailHeading}>
+              <div>
+                <p className={styles.eyebrow}>完整操作说明</p>
+                <h2 id={`${title}-guide-title`}>{title}详细指引</h2>
+              </div>
+              <button type="button" className={`${styles.backButton} focus-ring`} onClick={() => setShowDetails(false)}>返回简要说明</button>
+            </div>
+            <p className={styles.intro}>下面按页面上的功能区域说明每个按钮和控件的作用。具体能否操作，仍以当前账号角色和服务端返回状态为准。</p>
+            <div className={styles.detailSections}>
+              {details.map((section) => (
+                <section key={section.heading} className={styles.detailSection}>
+                  <h3>{section.heading}</h3>
+                  <ul>
+                    {section.items.map((item) => (
+                      <li key={item.title}><strong>{item.title}</strong><span>{item.detail}</span></li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className={styles.eyebrow}>第一次使用？</p>
+            <h2 id={`${title}-guide-title`}>{title}怎么用</h2>
+            <p className={styles.intro}>{intro}</p>
+            <ol>
+              {steps.map((step) => (
+                <li key={step.title}>
+                  <strong>{step.title}</strong>
+                  <span>{step.detail}</span>
+                </li>
+              ))}
+            </ol>
+            <p className={styles.note}><strong>提醒</strong>{note}</p>
+            {details && <button type="button" className={`${styles.detailButton} focus-ring`} onClick={() => setShowDetails(true)}>查看详细指引 <span aria-hidden="true">→</span></button>}
+          </>
+        )}
       </div>
     </aside>
   );
