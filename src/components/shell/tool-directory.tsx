@@ -16,7 +16,7 @@ function ToolCard({ tool, index }: { tool: HackKitTool; index: number }) {
       <div className="tool-card-copy">
         <h3>{tool.title}</h3>
         <p>{tool.description}</p>
-        <p className="tool-boundary"><strong>边界</strong>{tool.boundary}</p>
+        <p className="tool-boundary"><strong>用途</strong>{tool.purpose}</p>
       </div>
       <div className="tool-card-footer">
         <ul aria-label={`${tool.title}关键词`}>
@@ -44,13 +44,12 @@ export function ToolDirectory({ tools }: ToolDirectoryProps) {
   const resetFilters = () => setCategory("全部");
 
   return (
-    <section id="tools" className="tool-directory" aria-labelledby="tools-title">
-      <div className="directory-heading">
+    <section id="tools" className="tool-directory" aria-label="工具目录">
+      <div className="directory-heading" style={{ marginBottom: "18px" }}>
         <div>
-          <p className="directory-kicker">招新演示版 / 04 TOOLS</p>
-          <h2 id="tools-title">四个工具，按需打开。</h2>
+          <p className="directory-kicker">黑客松工具箱 / 04 TOOLS</p>
         </div>
-        <p>每张卡都是独立入口。当前四项均为本地可用，不代表已经部署到公网。</p>
+        <p>每张卡都是独立入口，按需要打开协作、投票、检查或交付工具。</p>
       </div>
 
       <div className="directory-controls" aria-label="按分类筛选">
