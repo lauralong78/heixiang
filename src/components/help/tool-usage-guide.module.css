@@ -84,6 +84,15 @@
 .content li { padding-left: 0.15rem; }
 .content li + li { margin-top: 0.38rem; }
 
+.content li strong {
+  display: block;
+  margin-bottom: 0.12rem;
+  color: var(--paper-ink, #171717);
+  font-size: 0.8rem;
+}
+
+.content li span { display: block; color: var(--paper-muted, #635b50); }
+
 .note {
   margin: 0.9rem 0 0;
   padding-top: 0.75rem;

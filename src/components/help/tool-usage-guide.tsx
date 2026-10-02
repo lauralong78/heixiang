@@ -7,7 +7,7 @@ import styles from "./tool-usage-guide.module.css";
 export type ToolUsageGuideProps = {
   title: string;
   intro: string;
-  steps: string[];
+  steps: Array<{ title: string; detail: string }>;
   note: string;
 };
 
@@ -99,7 +99,12 @@ export function ToolUsageGuide({ title, intro, steps, note }: ToolUsageGuideProp
         <h2 id={`${title}-guide-title`}>{title}怎么用</h2>
         <p className={styles.intro}>{intro}</p>
         <ol>
-          {steps.map((step) => <li key={step}>{step}</li>)}
+          {steps.map((step) => (
+            <li key={step.title}>
+              <strong>{step.title}</strong>
+              <span>{step.detail}</span>
+            </li>
+          ))}
         </ol>
         <p className={styles.note}><strong>提醒</strong>{note}</p>
       </div>
