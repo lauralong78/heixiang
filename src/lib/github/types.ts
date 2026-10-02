@@ -1,5 +1,10 @@
 export type CheckStatus = "pass" | "fail" | "unknown";
 export type CheckPriority = "high" | "medium" | "low";
+export type RepositoryCheckCategory =
+  | "submission"
+  | "collaboration"
+  | "reproducibility"
+  | "maintenance";
 
 export type ApiResult<T> =
   | { ok: true; data: T; requestId: string }
@@ -39,7 +44,25 @@ export type RepositoryCheckItem = {
     | "challenges"
     | "demo"
     | "roadmap"
-    | "risks";
+    | "risks"
+    | "license"
+    | "contributing"
+    | "code-of-conduct"
+    | "security-policy"
+    | "issue-template"
+    | "pull-request-template"
+    | "ci-workflow"
+    | "package-manifest"
+    | "lockfile"
+    | "test-script"
+    | "lint-script"
+    | "build-script"
+    | "codeowners"
+    | "changelog"
+    | "archived"
+    | "recent-update"
+    | "release";
+  category: RepositoryCheckCategory;
   label: string;
   priority: CheckPriority;
   status: CheckStatus;
@@ -50,11 +73,46 @@ export type RepositoryCheckItem = {
 
 export type MissingRepositoryCheck = Pick<
   RepositoryCheckItem,
-  "id" | "label" | "priority" | "summary" | "suggestion" | "evidence"
+  "id" | "category" | "label" | "priority" | "summary" | "suggestion" | "evidence"
 >;
+
+export type RepositoryFacts = {
+  community: {
+    license: boolean | null;
+    contributing: boolean | null;
+    codeOfConduct: boolean | null;
+    securityPolicy: boolean | null;
+    issueTemplate: boolean | null;
+    pullRequestTemplate: boolean | null;
+  };
+  reproducibility: {
+    ciWorkflow: boolean | null;
+    packageManifest: boolean | null;
+    lockfile: boolean | null;
+    testScript: boolean | null;
+    lintScript: boolean | null;
+    buildScript: boolean | null;
+    codeowners: boolean | null;
+    changelog: boolean | null;
+  };
+  maintenance: {
+    archived: boolean | null;
+    pushedAt: string | null;
+    hasRelease: boolean | null;
+    latestRelease: string | null;
+  };
+};
+
+export type RepositoryCheckGroup = {
+  id: RepositoryCheckCategory;
+  label: string;
+  description: string;
+  checks: RepositoryCheckItem[];
+};
 
 export type RepositoryCheckReport = {
   repository: RepositoryMetadata;
+  facts: RepositoryFacts;
   source: "api" | "public-page";
   checkedAt: string;
   readme: {
@@ -63,6 +121,7 @@ export type RepositoryCheckReport = {
     truncated: boolean;
   };
   checks: RepositoryCheckItem[];
+  groups: RepositoryCheckGroup[];
   missing: MissingRepositoryCheck[];
   totals: Record<CheckStatus, number>;
 };

@@ -54,6 +54,50 @@ test("keeps README-dependent rules unknown when README is unavailable", () => {
   assert.equal(report.totals.unknown, 8);
 });
 
+test("groups public repository facts without treating unknown metadata as missing", () => {
+  const report = inspectReadme(
+    "# Demo\n\n## Features\n- feature\n\n## Setup\n- npm test\n",
+    { path: "README.md", truncated: false },
+    {
+      community: {
+        license: true,
+        contributing: false,
+        codeOfConduct: null,
+        securityPolicy: null,
+        issueTemplate: false,
+        pullRequestTemplate: null,
+      },
+      reproducibility: {
+        ciWorkflow: true,
+        packageManifest: true,
+        lockfile: false,
+        testScript: true,
+        lintScript: null,
+        buildScript: false,
+        codeowners: null,
+        changelog: false,
+      },
+      maintenance: {
+        archived: false,
+        pushedAt: null,
+        hasRelease: true,
+        latestRelease: "v1.0.0",
+      },
+    },
+  );
+
+  assert.deepEqual(report.groups.map((group) => group.id), [
+    "submission",
+    "collaboration",
+    "reproducibility",
+    "maintenance",
+  ]);
+  assert.equal(report.checks.find((item) => item.id === "license")?.status, "pass");
+  assert.equal(report.checks.find((item) => item.id === "contributing")?.status, "fail");
+  assert.equal(report.checks.find((item) => item.id === "code-of-conduct")?.status, "unknown");
+  assert.equal(report.missing.some((item) => item.id === "code-of-conduct"), false);
+});
+
 test("requires at least three distinct risk or boundary lines", () => {
   const report = inspectReadme(
     "## Risks\n- security boundary\n- privacy limitation\n- known issue\n",
@@ -92,6 +136,78 @@ test("reads README with a real byte ceiling instead of unbounded response.text",
   const result = await fetchPublicRepository({ owner: "octocat", repo: "Hello-World" });
   assert.equal(result.truncated, true);
   assert.ok(new TextEncoder().encode(result.readme ?? "").byteLength <= 300_000);
+});
+
+test("collects collaboration, reproducibility, and maintenance facts from public metadata", async () => {
+  const responses: Record<string, unknown> = {
+    "/community/profile": {
+      files: {
+        license: { name: "MIT" },
+        contributing: { html_url: "https://github.com/example/demo/blob/main/CONTRIBUTING.md" },
+        code_of_conduct_file: null,
+        security_policy: { html_url: "https://github.com/example/demo/security/policy" },
+        issue_template: { config: true },
+        pull_request_template: { blob_url: "https://github.com/example/demo/blob/main/.github/PULL_REQUEST_TEMPLATE.md" },
+      },
+    },
+    "/contents": [
+      { name: "package.json", type: "file" },
+      { name: "package-lock.json", type: "file" },
+      { name: "CHANGELOG.md", type: "file" },
+      { name: "CODEOWNERS", type: "file" },
+    ],
+    "/contents/.github/workflows": [{ name: "ci.yml", type: "file" }],
+    "/contents/package.json": { scripts: { test: "node --test", lint: "eslint .", build: "next build" } },
+    "/releases/latest": { tag_name: "v1.0.0", name: "First release" },
+  };
+
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/repos/example/demo") {
+      return new Response(JSON.stringify({
+        name: "demo",
+        full_name: "example/demo",
+        description: "A test repository",
+        html_url: "https://github.com/example/demo",
+        homepage: null,
+        language: "TypeScript",
+        stargazers_count: 3,
+        forks_count: 1,
+        open_issues_count: 0,
+        default_branch: "main",
+        license: { spdx_id: "MIT", name: "MIT License" },
+        updated_at: "2026-09-25T00:00:00Z",
+        pushed_at: "2026-09-25T00:00:00Z",
+        archived: false,
+        private: false,
+      }), { status: 200 });
+    }
+    if (url.pathname.endsWith("/readme")) {
+      return new Response("# Demo\n\n## Features\n- feature", { status: 200 });
+    }
+    if (url.pathname.endsWith("/releases/latest")) {
+      return new Response(JSON.stringify(responses["/releases/latest"]), { status: 200 });
+    }
+    if (url.pathname.endsWith("/releases")) return new Response("[]", { status: 200 });
+    const key = url.pathname.replace("/repos/example/demo", "") || "/";
+    const body = responses[key];
+    if (body === undefined) return new Response("not found", { status: 404 });
+    const accept = String(init?.headers instanceof Headers ? init.headers.get("Accept") : "");
+    return new Response(typeof body === "string" || accept.includes("raw") ? JSON.stringify(body) : JSON.stringify(body), { status: 200 });
+  }) as typeof fetch;
+
+  const result = await fetchPublicRepository({ owner: "example", repo: "demo" });
+  assert.equal(result.facts.community.license, true);
+  assert.equal(result.facts.community.contributing, true);
+  assert.equal(result.facts.community.codeOfConduct, false);
+  assert.equal(result.facts.reproducibility.ciWorkflow, true);
+  assert.equal(result.facts.reproducibility.lockfile, true);
+  assert.equal(result.facts.reproducibility.testScript, true);
+  assert.equal(result.facts.reproducibility.lintScript, true);
+  assert.equal(result.facts.reproducibility.buildScript, true);
+  assert.equal(result.facts.maintenance.archived, false);
+  assert.equal(result.facts.maintenance.hasRelease, true);
+  assert.equal(result.facts.maintenance.latestRelease, "v1.0.0");
 });
 
 test("falls back to a validated public GitHub page when the anonymous API is rate limited", async () => {

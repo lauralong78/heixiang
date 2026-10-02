@@ -372,53 +372,61 @@ export function RepositoryChecker() {
                 </span>
               </div>
 
-              {report.checks.map((check, index) => {
-                const meta = statusMeta[check.status];
-                return (
-                  <article
-                    key={check.id}
-                    className="grid gap-5 border-2 border-[#171717] bg-[#fffaf1] p-5 shadow-[5px_5px_0_#bfe4ff] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#245ad8] sm:grid-cols-[3rem_1fr] sm:p-6"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center border-2 border-[#171717] bg-[#ffd735] font-mono text-lg font-bold">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h3 className="text-xl font-bold">{check.label}</h3>
-                        <span
-                          className={`inline-flex items-center gap-2 border px-3 py-1 font-mono text-xs font-bold ${meta.className}`}
-                        >
-                          <span aria-hidden>{meta.mark}</span> {meta.label}
-                        </span>
-                      </div>
-                      <p className="mt-3 leading-6 text-[#635b50]">{check.summary}</p>
-
-                      {check.evidence.length > 0 && (
-                        <div className="mt-4 grid gap-2">
-                          {check.evidence.map((evidence) => (
-                            <blockquote
-                              key={`${evidence.line}-${evidence.excerpt}`}
-                              className="grid gap-2 border-2 border-[#171717] bg-[#f4eddf] px-4 py-3 font-mono text-xs leading-5 text-[#635b50] sm:grid-cols-[4rem_1fr]"
-                            >
-                              <span className="font-bold text-[#245ad8]">L{evidence.line}</span>
-                              <span className="break-words">{evidence.excerpt}</span>
-                            </blockquote>
-                          ))}
+              {report.groups.map((group) => (
+                <div key={group.id} className="grid gap-3">
+                  <div className="border-2 border-[#171717] bg-[#bfe4ff] p-4 shadow-[4px_4px_0_#245ad8]">
+                    <h3 className="font-sans text-xl font-black">{group.label}</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#635b50]">{group.description}</p>
+                  </div>
+                  {group.checks.map((check, index) => {
+                    const meta = statusMeta[check.status];
+                    return (
+                      <article
+                        key={check.id}
+                        className="grid gap-5 border-2 border-[#171717] bg-[#fffaf1] p-5 shadow-[5px_5px_0_#bfe4ff] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#245ad8] sm:grid-cols-[3rem_1fr] sm:p-6"
+                      >
+                        <div className="flex h-12 w-12 items-center justify-center border-2 border-[#171717] bg-[#ffd735] font-mono text-lg font-bold">
+                          {String(index + 1).padStart(2, "0")}
                         </div>
-                      )}
+                        <div>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <h3 className="text-xl font-bold">{check.label}</h3>
+                            <span
+                              className={`inline-flex items-center gap-2 border px-3 py-1 font-mono text-xs font-bold ${meta.className}`}
+                            >
+                              <span aria-hidden>{meta.mark}</span> {meta.label}
+                            </span>
+                          </div>
+                          <p className="mt-3 leading-6 text-[#635b50]">{check.summary}</p>
 
-                      {check.suggestion && (
-                        <p className="mt-4 border-t border-dashed border-[#8a8173] pt-3 text-sm leading-6 text-[#635b50]">
-                          <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#245ad8]">
-                            改进建议
-                          </span>
-                          {check.suggestion}
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
+                          {check.evidence.length > 0 && (
+                            <div className="mt-4 grid gap-2">
+                              {check.evidence.map((evidence) => (
+                                <blockquote
+                                  key={`${evidence.line}-${evidence.excerpt}`}
+                                  className="grid gap-2 border-2 border-[#171717] bg-[#f4eddf] px-4 py-3 font-mono text-xs leading-5 text-[#635b50] sm:grid-cols-[4rem_1fr]"
+                                >
+                                  <span className="font-bold text-[#245ad8]">L{evidence.line}</span>
+                                  <span className="break-words">{evidence.excerpt}</span>
+                                </blockquote>
+                              ))}
+                            </div>
+                          )}
+
+                          {check.suggestion && (
+                            <p className="mt-4 border-t border-dashed border-[#8a8173] pt-3 text-sm leading-6 text-[#635b50]">
+                              <span className="mr-2 font-mono text-[10px] font-bold uppercase tracking-wider text-[#245ad8]">
+                                改进建议
+                              </span>
+                              {check.suggestion}
+                            </p>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ))}
             </section>
 
             <section className="mt-8 grid gap-px border-2 border-[#171717] bg-[#171717] shadow-[7px_7px_0_#ffd735] sm:grid-cols-2 lg:grid-cols-4">
@@ -438,8 +446,8 @@ export function RepositoryChecker() {
             </section>
 
             <p className="mt-5 text-xs leading-5 text-[#635b50]">
-              边界：结果来自规则匹配，只证明 README 中找到或未找到相关表述，
-              不代表功能真实可用或项目质量已通过验收。
+              边界：结果来自 README 规则与 GitHub 公开元数据，只证明公开证据存在、缺失或无法确认；
+              不代表功能真实可用、CI 已通过或项目质量已完成验收。
             </p>
           </div>
         )}

@@ -49,9 +49,10 @@ export async function GET(request: Request): Promise<Response> {
     const inspected = inspectReadme(result.readme, {
       path: result.readmePath,
       truncated: result.truncated,
-    });
+    }, result.facts);
     const report: RepositoryCheckReport = {
       repository: result.repository,
+      facts: result.facts,
       source: result.source,
       checkedAt: new Date().toISOString(),
       ...inspected,
