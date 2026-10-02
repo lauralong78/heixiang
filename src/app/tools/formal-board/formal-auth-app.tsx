@@ -603,7 +603,7 @@ export function FormalAuthApp() {
               <p className={styles.authHint} role="status" aria-live="polite">数据同步：{syncLabel(syncState)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString("zh-CN")}` : ""}。每 8 秒检查一次；失败时保留当前已知数据，不会静默覆盖。</p>
               <section className={styles.invitePanel} aria-label="可选联系方式">
                 <div><span className={styles.formIndex}>PRIVATE CONTACT / 可选联系方式</span><strong>联系方式（仅本人可见）</strong><p>不填也可正常使用；填写后不会公开给活动成员，也不会进入审计记录。当前：{contact.value ? "已填写" : "未填写"}。</p></div>
-                <form className={styles.inviteActions} onSubmit={saveContact}><input value={contactInput} onChange={(event) => setContactInput(event.target.value)} placeholder="例如：即时通讯 ID（可留空）" aria-label="可选联系方式" maxLength={240} /><button type="submit">保存 / 清空</button></form>
+                <form className={styles.inviteActions} onSubmit={saveContact}><input value={contactInput} onChange={(event) => setContactInput(event.target.value)} placeholder="例如：即时通讯 ID（可留空）" aria-label="可选联系方式" maxLength={240} /><button type="submit">保存</button></form>
                 <p className={styles.message} role="status" aria-live="polite">{contactMessage}</p>
               </section>
               <section className={styles.invitePanel} aria-label="邀请加入活动">
