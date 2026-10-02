@@ -13,7 +13,7 @@ export default function Home() {
               <span>现场工具。</span>
             </h1>
             <p className="hero-description">
-              给参加黑客松的小伙伴准备的独立微工具箱：协作推进、组织投票、检查公开 GitHub 仓库，也能整理交付文档。每个工具都能在本机直接打开，不需要按固定流程走。
+              给参加黑客松的小伙伴准备的独立微工具箱：协作推进、组织投票、检查公开 GitHub 仓库，也能整理交付文档。每个工具都能各自打开，按需要组合使用，不需要按固定流程走。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="#tools" className="primary-action focus-ring">查看全部工具</Link>
@@ -35,7 +35,7 @@ export default function Home() {
                 ))}
             </div>
             <p className="readiness-note">
-              {`四项工具均为本地可用；正式看板和投票墙是本机单实例，不是公网协作。`}
+              {`四个入口分别覆盖协作推进、组织投票、公开仓库检查和交付文档整理。`}
             </p>
           </aside>
         </div>
