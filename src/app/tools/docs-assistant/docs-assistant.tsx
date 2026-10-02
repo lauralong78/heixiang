@@ -228,7 +228,7 @@ export function DocsAssistant() {
             <p className={styles.lede}>把已经确认的内容填进来。缺的信息会直接标出来，不会替你编。</p>
           </div>
           <div className={styles.heroMeta}>
-            <span><b>LOCAL</b> 仅在浏览器处理</span>
+            <span><b>BROWSER</b> 仅在浏览器处理</span>
             <span><b>2 × MD</b> 真实文件下载</span>
             <span><b>NO FETCH</b> 链接不发起请求</span>
           </div>

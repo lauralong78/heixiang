@@ -117,7 +117,7 @@ export function RepositoryChecker() {
         const saved = window.localStorage.getItem(REPOSITORY_DRAFT_STORAGE_KEY);
         if (saved) {
           setRepositoryUrl(parseRepositoryDraft(saved));
-          setDraftNotice("已恢复这台浏览器上次检查的仓库地址。");
+          setDraftNotice("已恢复上次保存的仓库地址。");
         }
       } catch {
         try { window.localStorage.removeItem(REPOSITORY_DRAFT_STORAGE_KEY); } catch { /* storage unavailable */ }
@@ -225,7 +225,7 @@ export function RepositoryChecker() {
             </button>
           </form>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-[#6d7771]">
-            <p>仅接受 https://github.com/owner/repo；地址只保存在当前浏览器，不读取私有仓库。</p>
+            <p>仅接受 https://github.com/owner/repo；地址会自动保存为草稿，不读取私有仓库。</p>
             {repositoryUrl && (
               <button
                 type="button"
