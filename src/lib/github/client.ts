@@ -215,25 +215,9 @@ type GitHubRepositoryResponse = {
 
 export function unknownRepositoryFacts(): RepositoryFacts {
   return {
-    community: {
-      license: null,
-      contributing: null,
-      codeOfConduct: null,
-      securityPolicy: null,
-      issueTemplate: null,
-      pullRequestTemplate: null,
-    },
-    reproducibility: {
-      ciWorkflow: null,
-      packageManifest: null,
-      lockfile: null,
-      testScript: null,
-      lintScript: null,
-      buildScript: null,
-      codeowners: null,
-      changelog: null,
-    },
-    maintenance: { archived: null, pushedAt: null, hasRelease: null, latestRelease: null },
+    community: { license: null },
+    reproducibility: { ciWorkflow: null, packageManifest: null, testScript: null, buildScript: null },
+    maintenance: { archived: null, pushedAt: null },
   };
 }
 
@@ -279,8 +263,6 @@ async function collectRepositoryFacts(
   facts.maintenance = {
     archived: typeof repository.archived === "boolean" ? repository.archived : null,
     pushedAt: typeof repository.pushed_at === "string" ? repository.pushed_at : null,
-    hasRelease: null,
-    latestRelease: null,
   };
 
   const { owner, repo } = coordinates;
@@ -288,33 +270,13 @@ async function collectRepositoryFacts(
   const safeRepo = encodeURIComponent(repo);
   const profile = asRecord(await readJsonOptional(`/repos/${safeOwner}/${safeRepo}/community/profile`));
   const profileFiles = asRecord(profile?.files);
-  if (profile) {
-    facts.community = {
-      license: Boolean(profileFiles?.license),
-      contributing: Boolean(profileFiles?.contributing),
-      codeOfConduct: Boolean(profileFiles?.code_of_conduct_file || profileFiles?.code_of_conduct),
-      securityPolicy: Boolean(profileFiles?.security_policy),
-      issueTemplate: Boolean(profileFiles?.issue_template),
-      pullRequestTemplate: Boolean(profileFiles?.pull_request_template),
-    };
-  }
+  if (profile) facts.community.license = Boolean(profileFiles?.license);
 
   const root = await readJsonOptional(`/repos/${safeOwner}/${safeRepo}/contents`);
   const entries = Array.isArray(root) ? root.map(asRecord).filter(Boolean) as Record<string, unknown>[] : null;
   if (entries) {
     const names = new Set(entries.map((entry) => typeof entry.name === "string" ? entry.name.toLowerCase() : ""));
     facts.reproducibility.packageManifest = ["package.json", "pyproject.toml", "cargo.toml", "go.mod", "pom.xml", "build.gradle"].some((name) => names.has(name));
-    facts.reproducibility.lockfile = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lockb", "poetry.lock", "cargo.lock", "go.sum"].some((name) => names.has(name));
-    facts.reproducibility.codeowners = names.has("codeowners")
-      ? true
-      : names.has(".github") ? null : false;
-    facts.reproducibility.changelog = names.has("changelog.md") || names.has("changes.md");
-  }
-
-  if (facts.reproducibility.codeowners === null) {
-    facts.reproducibility.codeowners = (await readJsonOptional(
-      `/repos/${safeOwner}/${safeRepo}/contents/.github/CODEOWNERS`,
-    )) !== null;
   }
 
   const workflows = await readJsonOptional(`/repos/${safeOwner}/${safeRepo}/contents/.github/workflows`);
@@ -331,23 +293,10 @@ async function collectRepositoryFacts(
   if (manifestRecord) {
     facts.reproducibility.packageManifest = true;
     facts.reproducibility.testScript = typeof scripts?.test === "string";
-    facts.reproducibility.lintScript = typeof scripts?.lint === "string";
     facts.reproducibility.buildScript = typeof scripts?.build === "string";
   } else if (facts.reproducibility.packageManifest === false) {
     facts.reproducibility.testScript = false;
-    facts.reproducibility.lintScript = false;
     facts.reproducibility.buildScript = false;
-  }
-
-  const release = asRecord(await readJsonOptional(`/repos/${safeOwner}/${safeRepo}/releases/latest`));
-  if (release) {
-    facts.maintenance.hasRelease = true;
-    facts.maintenance.latestRelease = typeof release.tag_name === "string"
-      ? release.tag_name
-      : typeof release.name === "string" ? release.name : null;
-  } else {
-    const releases = await readJsonOptional(`/repos/${safeOwner}/${safeRepo}/releases?per_page=1`);
-    facts.maintenance.hasRelease = Array.isArray(releases) ? releases.length > 0 : null;
   }
 
   return facts;

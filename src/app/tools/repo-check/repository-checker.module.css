@@ -51,6 +51,10 @@
 
 .recovery { margin-top: 14px; border-top: 1px dashed #8a8173; padding-top: 12px; color: #635b50; font-size: 13px; line-height: 1.6; }
 .requestId { overflow-wrap: anywhere; }
+.agentPrompt { margin-top: 16px; border: 2px solid #171717; background: #f4eddf; padding: 14px; }
+.agentPrompt strong { font-size: 13px; }
+.agentPrompt span { color: #635b50; font: 700 10px/1.4 ui-monospace, monospace; text-transform: uppercase; }
+.agentPrompt pre { overflow-x: auto; margin: 10px 0 0; border: 2px solid #171717; background: #fffaf1; padding: 12px; color: #3d4a59; font: 12px/1.7 ui-monospace, monospace; white-space: pre-wrap; }
 
 @keyframes progress-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
 @media (prefers-reduced-motion: reduce) { .progressTrack i { animation: none; width: 100%; } }

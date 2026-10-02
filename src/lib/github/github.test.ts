@@ -61,27 +61,16 @@ test("groups public repository facts without treating unknown metadata as missin
     {
       community: {
         license: true,
-        contributing: false,
-        codeOfConduct: null,
-        securityPolicy: null,
-        issueTemplate: false,
-        pullRequestTemplate: null,
       },
       reproducibility: {
         ciWorkflow: true,
         packageManifest: true,
-        lockfile: false,
         testScript: true,
-        lintScript: null,
         buildScript: false,
-        codeowners: null,
-        changelog: false,
       },
       maintenance: {
         archived: false,
         pushedAt: null,
-        hasRelease: true,
-        latestRelease: "v1.0.0",
       },
     },
   );
@@ -93,9 +82,9 @@ test("groups public repository facts without treating unknown metadata as missin
     "maintenance",
   ]);
   assert.equal(report.checks.find((item) => item.id === "license")?.status, "pass");
-  assert.equal(report.checks.find((item) => item.id === "contributing")?.status, "fail");
-  assert.equal(report.checks.find((item) => item.id === "code-of-conduct")?.status, "unknown");
-  assert.equal(report.missing.some((item) => item.id === "code-of-conduct"), false);
+  assert.equal(report.checks.find((item) => item.id === "build-script")?.status, "fail");
+  assert.equal(report.checks.find((item) => item.id === "recent-update")?.status, "unknown");
+  assert.equal(report.missing.some((item) => item.id === "recent-update"), false);
 });
 
 test("requires at least three distinct risk or boundary lines", () => {
@@ -158,7 +147,6 @@ test("collects collaboration, reproducibility, and maintenance facts from public
     ],
     "/contents/.github/workflows": [{ name: "ci.yml", type: "file" }],
     "/contents/package.json": { scripts: { test: "node --test", lint: "eslint .", build: "next build" } },
-    "/releases/latest": { tag_name: "v1.0.0", name: "First release" },
   };
 
   globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
@@ -185,10 +173,6 @@ test("collects collaboration, reproducibility, and maintenance facts from public
     if (url.pathname.endsWith("/readme")) {
       return new Response("# Demo\n\n## Features\n- feature", { status: 200 });
     }
-    if (url.pathname.endsWith("/releases/latest")) {
-      return new Response(JSON.stringify(responses["/releases/latest"]), { status: 200 });
-    }
-    if (url.pathname.endsWith("/releases")) return new Response("[]", { status: 200 });
     const key = url.pathname.replace("/repos/example/demo", "") || "/";
     const body = responses[key];
     if (body === undefined) return new Response("not found", { status: 404 });
@@ -198,16 +182,10 @@ test("collects collaboration, reproducibility, and maintenance facts from public
 
   const result = await fetchPublicRepository({ owner: "example", repo: "demo" });
   assert.equal(result.facts.community.license, true);
-  assert.equal(result.facts.community.contributing, true);
-  assert.equal(result.facts.community.codeOfConduct, false);
   assert.equal(result.facts.reproducibility.ciWorkflow, true);
-  assert.equal(result.facts.reproducibility.lockfile, true);
   assert.equal(result.facts.reproducibility.testScript, true);
-  assert.equal(result.facts.reproducibility.lintScript, true);
   assert.equal(result.facts.reproducibility.buildScript, true);
   assert.equal(result.facts.maintenance.archived, false);
-  assert.equal(result.facts.maintenance.hasRelease, true);
-  assert.equal(result.facts.maintenance.latestRelease, "v1.0.0");
 });
 
 test("falls back to a validated public GitHub page when the anonymous API is rate limited", async () => {

@@ -288,22 +288,12 @@ function buildFactChecks(facts: RepositoryFacts): RepositoryCheckItem[] {
   type FactTuple = [FactDefinition["id"], string, CheckPriority, boolean | null, FactDefinition["category"], string, string, string, string];
   const definitions = [
     ["license", "许可证", "high", community.license, "collaboration", "检测到公开许可证声明。", "未检测到公开许可证声明。", "GitHub 当前无法确认许可证状态。", "为仓库添加明确的 LICENSE 文件。"],
-    ["contributing", "贡献指南", "medium", community.contributing, "collaboration", "找到 CONTRIBUTING 指南。", "未找到 CONTRIBUTING 指南。", "GitHub 当前无法确认贡献指南。", "补充贡献流程、开发环境和提交规范。"],
-    ["code-of-conduct", "行为准则", "medium", community.codeOfConduct, "collaboration", "找到 CODE_OF_CONDUCT。", "未找到 CODE_OF_CONDUCT。", "GitHub 当前无法确认行为准则。", "补充团队和社区参与者都能查到的行为准则。"],
-    ["security-policy", "安全报告入口", "high", community.securityPolicy, "collaboration", "找到 SECURITY.md 或安全报告入口。", "未找到 SECURITY.md 或安全报告入口。", "GitHub 当前无法确认安全报告入口。", "说明如何私下报告安全问题，不要把敏感细节直接发到公开 Issue。"],
-    ["issue-template", "Issue 模板", "low", community.issueTemplate, "collaboration", "找到 Issue 模板配置。", "未找到 Issue 模板配置。", "GitHub 当前无法确认 Issue 模板。", "为 Bug、功能建议或问题咨询提供结构化模板。"],
-    ["pull-request-template", "Pull Request 模板", "low", community.pullRequestTemplate, "collaboration", "找到 Pull Request 模板。", "未找到 Pull Request 模板。", "GitHub 当前无法确认 Pull Request 模板。", "让贡献者说明改动范围、测试方式和已知限制。"],
     ["ci-workflow", "CI workflow", "medium", reproducibility.ciWorkflow, "reproducibility", "找到 GitHub Actions workflow。", "未找到 GitHub Actions workflow。", "GitHub 当前无法确认 CI workflow。", "至少加入安装、检查或测试的自动化 workflow。"],
     ["package-manifest", "依赖清单", "medium", reproducibility.packageManifest, "reproducibility", "找到项目依赖或构建清单。", "未找到常见项目依赖清单。", "当前无法确认项目依赖清单。", "提交适用于项目技术栈的依赖或构建清单。"],
-    ["lockfile", "依赖锁文件", "medium", reproducibility.lockfile, "reproducibility", "找到依赖锁文件。", "未找到依赖锁文件。", "当前无法确认依赖锁文件。", "提交对应包管理器的 lockfile，减少环境漂移。"],
     ["test-script", "测试入口", "high", reproducibility.testScript, "reproducibility", "项目清单声明了测试入口。", "未在项目清单中找到测试入口。", "当前无法确认测试入口。", "提供可复现的测试命令，并在 README 中说明。"],
-    ["lint-script", "Lint 入口", "medium", reproducibility.lintScript, "reproducibility", "项目清单声明了 lint 入口。", "未在项目清单中找到 lint 入口。", "当前无法确认 lint 入口。", "提供静态检查命令，并让 CI 调用它。"],
     ["build-script", "Build 入口", "medium", reproducibility.buildScript, "reproducibility", "项目清单声明了 build 入口。", "未在项目清单中找到 build 入口。", "当前无法确认 build 入口。", "提供可复现的构建命令；检查器不会替你执行仓库代码。"],
-    ["codeowners", "CODEOWNERS", "low", reproducibility.codeowners, "reproducibility", "找到 CODEOWNERS。", "未找到 CODEOWNERS。", "当前无法确认 CODEOWNERS。", "为关键目录指定维护责任人或评审团队。"],
-    ["changelog", "变更记录", "low", reproducibility.changelog, "reproducibility", "找到 CHANGELOG 或变更记录文件。", "未找到 CHANGELOG。", "当前无法确认变更记录。", "记录重要版本变化、兼容性影响和升级注意事项。"],
     ["archived", "仓库归档状态", "high", maintenance.archived === null ? null : !maintenance.archived, "maintenance", "仓库当前未被归档。", "仓库当前已归档。", "当前无法确认仓库归档状态。", "如果项目仍在招新或面试中，请确认仓库没有被归档。"],
     ["recent-update", "近期维护信号", "medium", recentUpdateStatus(maintenance.pushedAt), "maintenance", recentUpdateSummary(maintenance.pushedAt), "超过约 6 个月未见公开推送。", "当前无法确认最近维护时间。", "如果项目仍在维护，请在 README 中说明当前状态或下一步计划。"],
-    ["release", "公开 Release", "low", maintenance.hasRelease, "maintenance", `找到公开 Release${maintenance.latestRelease ? `（${maintenance.latestRelease}）` : ""}。`, "未找到公开 Release。", "当前无法确认 Release 状态。", "如果项目有可交付版本，发布一个带说明的 Release。"],
   ] as FactTuple[];
 
   const typedDefinitions: FactDefinition[] = definitions.map(([id, label, priority, value, category, passSummary, failSummary, unknownSummary, suggestion]) =>
@@ -352,7 +342,7 @@ function recentUpdateSummary(pushedAt: string | null): string {
 function groupChecks(checks: RepositoryCheckItem[]): RepositoryCheckReport["groups"] {
   const definitions = [
     ["submission", "提交表达", "README 中与项目价值、功能和交付说明直接相关的证据。"],
-    ["collaboration", "协作准备度", "帮助陌生人理解如何参与、反馈和报告问题的公开文件。"],
+    ["collaboration", "基础公开性", "面试展示和公开交付前最需要确认的仓库许可事实。"],
     ["reproducibility", "可复现性", "只检查公开配置是否存在，不执行仓库代码，也不代表 CI 已通过。"],
     ["maintenance", "公开维护信号", "来自 GitHub 公开元数据的事实，不等同于项目质量结论。"],
   ] as const;

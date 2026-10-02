@@ -46,22 +46,12 @@ export type RepositoryCheckItem = {
     | "roadmap"
     | "risks"
     | "license"
-    | "contributing"
-    | "code-of-conduct"
-    | "security-policy"
-    | "issue-template"
-    | "pull-request-template"
     | "ci-workflow"
     | "package-manifest"
-    | "lockfile"
     | "test-script"
-    | "lint-script"
     | "build-script"
-    | "codeowners"
-    | "changelog"
     | "archived"
-    | "recent-update"
-    | "release";
+    | "recent-update";
   category: RepositoryCheckCategory;
   label: string;
   priority: CheckPriority;
@@ -79,27 +69,16 @@ export type MissingRepositoryCheck = Pick<
 export type RepositoryFacts = {
   community: {
     license: boolean | null;
-    contributing: boolean | null;
-    codeOfConduct: boolean | null;
-    securityPolicy: boolean | null;
-    issueTemplate: boolean | null;
-    pullRequestTemplate: boolean | null;
   };
   reproducibility: {
     ciWorkflow: boolean | null;
     packageManifest: boolean | null;
-    lockfile: boolean | null;
     testScript: boolean | null;
-    lintScript: boolean | null;
     buildScript: boolean | null;
-    codeowners: boolean | null;
-    changelog: boolean | null;
   };
   maintenance: {
     archived: boolean | null;
     pushedAt: string | null;
-    hasRelease: boolean | null;
-    latestRelease: string | null;
   };
 };
 
