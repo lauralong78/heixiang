@@ -1,0 +1,42 @@
+.page {
+  min-height: 100vh;
+  background: #f4eddf;
+  background-image: radial-gradient(#d8cdbb 0.8px, transparent 0.8px);
+  background-size: 14px 14px;
+}
+
+.progress {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  border: 3px solid #171717;
+  background: #bfe4ff;
+  box-shadow: 6px 6px 0 #245ad8;
+  padding: 16px 18px;
+}
+
+.progressHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.progressKicker { color: #245ad8; font: 800 10px/1.4 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+.progressStage { font: 800 13px/1.4 "Microsoft YaHei", sans-serif; }
+.progressCopy { margin: 0; color: #3d4a59; font-size: 12px; line-height: 1.6; }
+.progressTrack { height: 8px; overflow: hidden; border: 2px solid #171717; background: #fffaf1; }
+.progressTrack i { display: block; width: 42%; height: 100%; background: #245ad8; animation: progress-slide 1.25s ease-in-out infinite; }
+
+.unknownPanel {
+  margin-top: 18px;
+  border: 2px dashed #8a8173;
+  background: #fff8dc;
+  padding: 16px;
+}
+
+.unknownPanel h3 { margin: 0; font-size: 16px; }
+.unknownPanel p { margin: 6px 0 0; color: #635b50; font-size: 13px; line-height: 1.6; }
+.unknownList { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.unknownList li { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #dfd0a4; padding-top: 8px; font-size: 13px; }
+.unknownList span { color: #766e62; text-align: right; }
+
+.recovery { margin-top: 14px; border-top: 1px dashed #d7aca0; padding-top: 12px; color: #663b33; font-size: 13px; line-height: 1.6; }
+.requestId { overflow-wrap: anywhere; }
+
+@keyframes progress-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .progressTrack i { animation: none; width: 100%; } }

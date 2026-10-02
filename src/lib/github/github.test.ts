@@ -45,6 +45,15 @@ test("reports prioritized missing requirements and count-based evidence", () => 
   assert.match(report.missing.find((item) => item.id === "problem")?.suggestion ?? "", /目标用户/);
 });
 
+test("keeps README-dependent rules unknown when README is unavailable", () => {
+  const report = inspectReadme(null, { path: null, truncated: false });
+
+  assert.equal(report.readme.status, "fail");
+  assert.equal(report.checks.find((item) => item.id === "setup")?.status, "unknown");
+  assert.equal(report.missing.some((item) => item.id === "setup"), false);
+  assert.equal(report.totals.unknown, 8);
+});
+
 test("requires at least three distinct risk or boundary lines", () => {
   const report = inspectReadme(
     "## Risks\n- security boundary\n- privacy limitation\n- known issue\n",

@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
+import styles from "./repository-checker.module.css";
+
 import {
   parseRepositoryDraft,
   REPOSITORY_DRAFT_STORAGE_KEY,
@@ -58,6 +60,28 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function recoveryHint(code: string): string {
+  switch (code) {
+    case "INVALID_GITHUB_URL":
+      return "请改为不带查询参数、片段或登录信息的 https://github.com/owner/repo 地址。";
+    case "REPOSITORY_NOT_FOUND":
+    case "PRIVATE_REPOSITORY":
+      return "请确认仓库公开、地址拼写正确，并在 GitHub 的无痕窗口中可以直接打开。";
+    case "GITHUB_RATE_LIMITED":
+      return "稍后再试；如果公开页面可访问，检查器会尝试使用公开页面降级读取。";
+    case "README_UNAVAILABLE":
+    case "GITHUB_PUBLIC_PAGE_UNAVAILABLE":
+      return "稍后重试，或先打开仓库主页确认 GitHub 当前可访问。";
+    case "GITHUB_TIMEOUT":
+    case "GITHUB_UNAVAILABLE":
+    case "GITHUB_UPSTREAM_ERROR":
+    case "CLIENT_REQUEST_FAILED":
+      return "确认本地服务和网络正常后重试；不要把 Token 粘贴到地址或表单中。";
+    default:
+      return "保留当前地址后重试；若仍失败，请记录 Request ID 交给维护者排查。";
+  }
+}
+
 export function RepositoryChecker() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [hydrated, setHydrated] = useState(false);
@@ -65,6 +89,7 @@ export function RepositoryChecker() {
   const [report, setReport] = useState<RepositoryCheckReport | null>(null);
   const [error, setError] = useState<ErrorState | null>(null);
   const [pending, setPending] = useState(false);
+  const [pendingStage, setPendingStage] = useState("正在准备公开只读请求…");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -98,10 +123,12 @@ export function RepositoryChecker() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
+    setPendingStage("正在校验仓库地址…");
     setError(null);
     setReport(null);
 
     try {
+      setPendingStage("正在读取仓库元数据与 README…");
       const response = await fetch(
         `/api/github/check?url=${encodeURIComponent(repositoryUrl.trim())}`,
         { headers: { Accept: "application/json" } },
@@ -111,6 +138,7 @@ export function RepositoryChecker() {
         setError({ ...result.error, requestId: result.requestId });
         return;
       }
+      setPendingStage("正在整理证据与缺项…");
       setReport(result.data);
     } catch {
       setError({
@@ -125,7 +153,7 @@ export function RepositoryChecker() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f2efe7] text-[#16241d]">
+    <main className={`${styles.page} text-[#16241d]`}>
       <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-16">
         <header className="grid gap-8 border-b-2 border-[#16241d] pb-10 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
           <div>
@@ -177,7 +205,7 @@ export function RepositoryChecker() {
             </button>
           </form>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-[#6d7771]">
-            <p>仅接受 https://github.com/owner/repo；有效地址会保存在当前浏览器，不读取私有仓库。</p>
+            <p>仅接受 https://github.com/owner/repo；地址只保存在当前浏览器，不读取私有仓库。</p>
             {repositoryUrl && (
               <button
                 type="button"
@@ -190,11 +218,21 @@ export function RepositoryChecker() {
                   setDraftNotice("已清除本机保存的仓库地址。");
                 }}
               >
-                清除已保存地址
+                移除本机草稿
               </button>
             )}
           </div>
           {draftNotice && <p className="mt-2 text-xs text-[#6d7771]" role="status">{draftNotice}</p>}
+          {pending && (
+            <div className={styles.progress} role="status" aria-live="polite">
+              <div className={styles.progressHeader}>
+                <span className={styles.progressKicker}>READ ONLY / LIVE CHECK</span>
+                <strong className={styles.progressStage}>{pendingStage}</strong>
+              </div>
+              <p className={styles.progressCopy}>GitHub 响应可能需要几秒；完成前不会把等待状态显示为成功。</p>
+              <div className={styles.progressTrack} aria-hidden="true"><i /></div>
+            </div>
+          )}
         </section>
 
         {error && (
@@ -208,13 +246,14 @@ export function RepositoryChecker() {
                   {error.code}
                 </p>
                 <h2 className="mt-2 text-xl font-bold">没有完成这次检查</h2>
-                <p className="mt-2 text-[#663b33]">{error.message}</p>
+            <p className="mt-2 text-[#663b33]">{error.message}</p>
+            <p className={styles.recovery}><strong>可以这样恢复：</strong> {recoveryHint(error.code)}</p>
               </div>
               <span className="border border-[#8f2f25] px-3 py-1 font-mono text-xs text-[#8f2f25]">
                 {error.retryable ? "可重试" : "请修正输入"}
               </span>
             </div>
-            <p className="mt-5 font-mono text-[11px] text-[#8a625a]">
+            <p className={`${styles.requestId} mt-5 font-mono text-[11px] text-[#8a625a]`}>
               Request ID: {error.requestId}
             </p>
           </section>
@@ -310,6 +349,17 @@ export function RepositoryChecker() {
               <p className="mt-4 text-xs leading-5 text-[#68736d]">
                 “缺失”表示规则没有在 README 中找到足够证据；“无法确认”不会被误算成缺失。
               </p>
+              {report.checks.some((check) => check.status === "unknown") && (
+                <div className={styles.unknownPanel} aria-labelledby="unknown-heading">
+                  <h3 id="unknown-heading">无法确认：证据不足，不判定为缺失</h3>
+                  <p>这些项目没有被算入待补齐清单。通常是 README 缺失，或上游只返回了公开页面的部分信息。</p>
+                  <ul className={styles.unknownList}>
+                    {report.checks.filter((check) => check.status === "unknown").map((check) => (
+                      <li key={check.id}><strong>{check.label}</strong><span>{check.summary}</span></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
 
             <section className="mt-8 grid gap-5" aria-labelledby="result-heading">

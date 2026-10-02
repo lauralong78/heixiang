@@ -78,6 +78,8 @@ export function parseGitHubRepositoryUrl(input: string): RepositoryCoordinates {
   return { owner, repo };
 }
 
+// Optional GITHUB_TOKEN is intentionally server-only: it is never read from a
+// query, request header, client bundle, or response body.
 function githubHeaders(accept: string): HeadersInit {
   const headers: Record<string, string> = {
     Accept: accept,

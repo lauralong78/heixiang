@@ -10,6 +10,15 @@ import type { ApiResult, RepositoryCheckReport } from "@/lib/github/types";
 
 export const runtime = "nodejs";
 
+/**
+ * GET /api/github/check?url=https%3A%2F%2Fgithub.com%2Fowner%2Frepo
+ *
+ * Returns the shared ApiResult contract. GITHUB_TOKEN is optional and is read
+ * only on the server to raise GitHub API limits; it is never accepted from the
+ * browser. Deployments need outbound HTTPS access to api.github.com and, only
+ * for the documented rate-limit fallback, github.com.
+ */
+
 function errorResponse(
   error: GitHubRequestError,
   requestId: string,
