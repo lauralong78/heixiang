@@ -114,10 +114,10 @@ export function DocsAssistant() {
             readme: stored.readmeEdited === true,
             onePager: stored.onePagerEdited === true,
           });
-          setStatus("已恢复上次保存的本地草稿。");
+          setStatus("已恢复上次保存的草稿。");
         }
       } catch {
-        setStorageWarning("本地草稿无法读取，已使用空白表单。");
+        setStorageWarning("草稿无法读取，已使用空白表单。");
       } finally {
         setHydrated(true);
       }
@@ -172,13 +172,13 @@ export function DocsAssistant() {
   }
 
   function clearWorkspace() {
-    if (!window.confirm("确定清除表单、两份文档和本地草稿吗？此操作无法撤销。")) return;
+    if (!window.confirm("确定清除表单、两份文档和草稿吗？此操作无法撤销。")) return;
     const empty = createEmptyDraft();
     setDraft(empty);
     setDocuments(generateDocuments(empty));
     setEdited({ readme: false, onePager: false });
     localStorage.removeItem(DOCS_ASSISTANT_STORAGE_KEY);
-    setStatus("表单、文档与本地草稿已清除。");
+    setStatus("表单、文档与草稿已清除。");
   }
 
   async function copyCurrent() {
@@ -237,7 +237,7 @@ export function DocsAssistant() {
         <section className={styles.noticeRow} aria-label="工具状态">
           <span className={styles.localBadge}>无 Key · 无网络可用</span>
           <span className={styles.aiBadge} title="仅预留接口类型，当前没有实现、按钮或请求">{DOCS_ASSISTANT_AI.label}</span>
-          <span className={styles.saveState}>{hydrated ? "自动保存本地草稿" : "正在读取本地草稿…"}</span>
+          <span className={styles.saveState}>{hydrated ? "自动保存草稿" : "正在读取草稿…"}</span>
         </section>
 
         {(storageWarning || status) && (

@@ -235,10 +235,10 @@ export function RepositoryChecker() {
                   setReport(null);
                   setError(null);
                   window.localStorage.removeItem(REPOSITORY_DRAFT_STORAGE_KEY);
-                  setDraftNotice("已清除本机保存的仓库地址。");
+                  setDraftNotice("已清除已保存的仓库地址。");
                 }}
               >
-                移除本机草稿
+                移除已保存地址
               </button>
             )}
           </div>
