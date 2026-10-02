@@ -13,7 +13,7 @@ export default function Home() {
               <span>现场工具。</span>
             </h1>
             <p className="hero-description">
-              面向社团招新面试的四个独立入口：看板、投票墙、GitHub 检查和项目文档。它们都能在本机直接打开，不需要按固定流程走。
+              给参加黑客松的小伙伴准备的独立微工具箱：协作推进、组织投票、检查公开 GitHub 仓库，也能整理交付文档。每个工具都能在本机直接打开，不需要按固定流程走。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="#tools" className="primary-action focus-ring">查看全部工具</Link>
