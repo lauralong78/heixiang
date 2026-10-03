@@ -37,6 +37,9 @@ yarn-error.log*
 # local orchestration scratch files
 /work/
 
+# local-only recording guide; do not publish it with the project submission
+/docs/DEMO_SCRIPT.md
+
 # local formal-board single-instance data (accounts, sessions, activities)
 /data/
 
