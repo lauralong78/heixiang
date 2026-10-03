@@ -29,6 +29,6 @@
 
 ## 链接（待填写）
 
-- 仓库链接：待填写
+- 仓库链接：[https://github.com/lauralong78/heixiang](https://github.com/lauralong78/heixiang)
 - 部署链接：待填写（当前未部署）
 - 演示视频：待填写
