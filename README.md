@@ -34,18 +34,32 @@
 5. 打开 GitHub 仓库检查，输入一个真实的公开仓库 URL，查看每个检查项的证据和 `pass/fail/unknown` 状态。
 6. 打开项目文档助手，输入上述项目的已确认资料，检查缺失清单，编辑生成结果并下载 Markdown。
 
-## 本地运行
+## 在任意一台电脑本地运行
 
-要求 Node.js 20.9 或更高版本。
+`localhost:3000` 不指向开发者的电脑，而是指向**当前运行项目的那台电脑**。因此，其他人只要在自己的电脑上克隆仓库并启动服务，就能在自己的浏览器访问同一地址；每台电脑的数据彼此独立。
+
+### 前置条件
+
+- Git
+- Node.js 20.9 或更高版本（npm 会随 Node.js 安装）
+- 桌面浏览器
+
+默认模式不需要 Supabase、Docker、API Key、DeepSeek Key 或任何个人配置。首次执行 `npm ci` 需要联网下载依赖；GitHub 仓库检查工具在使用时也需要能访问公开 GitHub。其余默认功能由本机启动的服务处理。
+
+### 复用步骤
 
 ```bash
+git clone https://github.com/lauralong78/heixiang.git
+cd heixiang
 npm ci
 npm run dev
 ```
 
-然后访问 <http://localhost:3000/>。首页只展示上述四个当前可用入口。默认不需要账号、API Key 或云服务；看板和投票墙的本地服务数据写入被 Git 忽略的 `data/formal-board/local-store.json`，该文件是开发数据，不是数据库或安全备份。
+随后在这台电脑的浏览器打开 <http://localhost:3000/>。如果 3000 端口已被占用，可运行 `npm run dev -- -p 3001`，再打开终端显示的对应地址。
 
-若要显式测试 Supabase 模式，需由项目所有者单独授权并在本机 `.env.local` 配置 `FORMAL_BOARD_STORAGE_MODE=supabase`、`SUPABASE_URL` 与服务端 `SUPABASE_SECRET_KEY`（兼容旧变量名 `SUPABASE_SERVICE_ROLE_KEY`）。密钥只能留在本机服务端，不能提交、截图或放入 `NEXT_PUBLIC_*`。配置缺失或网络失败时不会静默退回本地模式；没有这些配置时请保持默认本地模式。
+看板和投票墙首次使用后会在**运行项目的那台电脑**生成 `data/formal-board/local-store.json`。它是该电脑的演示数据，不是仓库内容、数据库或安全备份，并且已被 Git 忽略：新克隆的项目不会携带开发者的账号、活动、密码、联系方式或其他本机数据。
+
+若要显式测试 Supabase 模式，需由项目所有者单独授权，并在自己的 `.env.local` 配置 `FORMAL_BOARD_STORAGE_MODE=supabase`、`SUPABASE_URL` 与服务端 `SUPABASE_SECRET_KEY`（兼容旧变量名 `SUPABASE_SERVICE_ROLE_KEY`）。密钥只能留在本机服务端，不能提交、截图或放入 `NEXT_PUBLIC_*`。配置缺失或网络失败时不会静默退回本地模式；没有这些配置时请保持默认本地模式。
 
 ## 技术实现
 
