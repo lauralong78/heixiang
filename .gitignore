@@ -37,6 +37,9 @@ yarn-error.log*
 # local orchestration scratch files
 /work/
 
+# local verification reports and other generated deliverables
+/outputs/
+
 # local-only recording guide; do not publish it with the project submission
 /docs/DEMO_SCRIPT.md
 
