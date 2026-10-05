@@ -61,6 +61,19 @@ npm run dev
 
 若要显式测试 Supabase 模式，需由项目所有者单独授权，并在自己的 `.env.local` 配置 `FORMAL_BOARD_STORAGE_MODE=supabase`、`SUPABASE_URL` 与服务端 `SUPABASE_SECRET_KEY`（兼容旧变量名 `SUPABASE_SERVICE_ROLE_KEY`）。密钥只能留在本机服务端，不能提交、截图或放入 `NEXT_PUBLIC_*`。配置缺失或网络失败时不会静默退回本地模式；没有这些配置时请保持默认本地模式。
 
+## 部署难度与当前结论
+
+当前仓库可以部署 Next.js 页面，但“完整可用部署”不是把代码上传到静态托管就结束。正式进度看板和投票墙默认通过 Next.js API 读写 `data/formal-board/local-store.json`；这个文件是**运行项目的那台电脑上的相对路径**，适合单机演示，不适合作为云端持久数据库。它不会被提交到 GitHub，也不会随着仓库自动带到其他电脑。
+
+如果直接部署到 Serverless 平台，函数实例的本地文件系统不保证持久写入；以 Vercel Node.js Functions 为例，运行时文件系统为只读，只有临时 `/tmp` 空间。因此直接部署可能出现页面能打开、但账号、活动、队伍、任务或投票数据在实例切换、重启或休眠后丢失的情况。参考 [Vercel Functions Runtime 文档](https://vercel.com/docs/functions/runtimes)。
+
+目前有两种部署层级：
+
+1. **展示版（低难度）**：可以部署首页、GitHub 仓库检查和项目文档助手；正式看板和投票墙只能作为界面展示，不能对外宣称具备可靠的云端持久化协作。
+2. **完整可用版（中等偏高难度）**：需要接入 Supabase/PostgreSQL 等托管数据库，配置仅存在服务端的环境变量和 Secret，执行并验证数据库 migrations，再部署 Next.js；上线前还要用两个独立桌面浏览器验证登录、邀请、权限、刷新/轮询、重复投票、错误处理和数据恢复。
+
+本仓库当前没有部署链接，是因为托管数据库、Secret、HTTPS 和线上验收尚未完成；保留本地模式是为了让任何人克隆后零成本复现和演示，而不是把未验证的线上能力写成已完成。
+
 ## 技术实现
 
 - **技术栈**：Next.js App Router 16、React 19、TypeScript、Tailwind CSS 4、Node.js；测试使用 `tsx` 和 Node test runner。
