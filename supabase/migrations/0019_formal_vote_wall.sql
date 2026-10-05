@@ -59,7 +59,7 @@ begin
   select x.* into p from public.polls x join public.memberships m on m.activity_id = x.activity_id and m.user_id = p_user_id and m.status = 'active' where x.id = p_poll_id and x.deleted_at is null;
   if not found then raise exception 'poll not found or forbidden' using errcode = '42501'; end if;
   member_ok := exists(select 1 from public.memberships m where m.activity_id = p.activity_id and m.user_id = p_user_id and m.status = 'active');
-  visible := p.result_mode = 'live' or (p.result_mode = 'final' and p.status = 'closed');
+  visible := exists(select 1 from public.memberships m where m.activity_id = p.activity_id and m.user_id = p_user_id and m.role = 'host' and m.status = 'active') or p.result_mode = 'live' or (p.result_mode = 'final' and p.status = 'closed');
   select coalesce(jsonb_agg(jsonb_build_object('optionId', o.id, 'count', case when visible then (select count(*) from public.votes v where v.poll_id = p.id and v.option_id = o.id and v.status = 'active') else null end, 'recordedForViewer', exists(select 1 from public.votes v where v.poll_id = p.id and v.option_id = o.id and v.voter_user_id = p_user_id)) order by o.created_at), '[]'::jsonb) into result from public.poll_options o where o.poll_id = p.id;
   return jsonb_build_object('poll', to_jsonb(p), 'options', coalesce((select jsonb_agg(to_jsonb(o) order by o.created_at) from public.poll_options o where o.poll_id = p.id), '[]'::jsonb), 'results', result, 'viewerVote', (select jsonb_build_object('voteId', v.id, 'optionId', v.option_id, 'status', v.status) from public.votes v where v.poll_id = p.id and v.voter_user_id = p_user_id));
 end; $$;

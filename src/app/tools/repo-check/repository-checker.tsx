@@ -76,7 +76,7 @@ function recoveryHint(code: string): string {
     case "GITHUB_UNAVAILABLE":
     case "GITHUB_UPSTREAM_ERROR":
     case "CLIENT_REQUEST_FAILED":
-      return "确认本地服务和网络正常后重试；不要把 Token 粘贴到地址或表单中。";
+      return "确认服务和网络正常后重试；不要把 Token 粘贴到地址或表单中。";
     default:
       return "保留当前地址后重试；若仍失败，请记录 Request ID 交给维护者排查。";
   }
@@ -121,7 +121,7 @@ export function RepositoryChecker() {
         }
       } catch {
         try { window.localStorage.removeItem(REPOSITORY_DRAFT_STORAGE_KEY); } catch { /* storage unavailable */ }
-        setDraftNotice("已有本地地址草稿损坏，已安全清除。");
+        setDraftNotice("已有地址草稿损坏，已安全清除。");
       } finally {
         setHydrated(true);
       }
@@ -163,7 +163,7 @@ export function RepositoryChecker() {
     } catch {
       setError({
         code: "CLIENT_REQUEST_FAILED",
-        message: "无法连接检查服务，请确认本地服务正在运行。",
+        message: "无法连接检查服务，请确认服务正在运行。",
         retryable: true,
         requestId: "未生成",
       });

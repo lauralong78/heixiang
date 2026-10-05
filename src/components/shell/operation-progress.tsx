@@ -11,8 +11,8 @@ type OperationProgressProps = {
 };
 
 function activeMessage(messages: readonly string[], syncing: boolean) {
-  if (syncing) return "正在同步服务端数据…";
-  return messages.find((message) => /正在|请稍候|重新同步/.test(message)) ?? "";
+  if (syncing) return messages.find((message) => /会话|登录状态|登录/.test(message)) ?? "正在同步服务端数据…";
+  return messages.find((message) => /请稍候|重新(同步|检查)/.test(message)) ?? "";
 }
 
 export function OperationProgress({ scope, messages, syncing = false }: OperationProgressProps) {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { supabaseRestRpc } from "./supabase-rest";
 import { isLocalFormalBoard } from "./storage";
-import { localCastVote, localCreateOption, localCreatePoll, localSnapshot, localUpdateOption, localUpdatePoll, localVoidVote } from "./local-store";
+import { localCastVote, localCreateOption, localCreatePoll, localListPolls, localSnapshot, localUpdateOption, localUpdatePoll, localVoidVote } from "./local-store";
 import type { PollOptionStatus, PollResultMode } from "./vote";
 
 export type PollRow = {
@@ -10,7 +10,7 @@ export type PollRow = {
   status: "draft" | "open" | "closed"; result_mode: PollResultMode; host_eligible: boolean;
   allow_self_vote: boolean; data_version: number; created_by: string; created_at: string; updated_at: string; closed_at: string | null;
 };
-export type PollOptionRow = { id: string; poll_id: string; title: string; description: string; link: string | null; submitted_by: string | null; status: PollOptionStatus; data_version: number; created_at: string; updated_at: string };
+export type PollOptionRow = { id: string; poll_id: string; team_id?: string | null; title: string; description: string; link: string | null; submitted_by: string | null; status: PollOptionStatus; data_version: number; created_at: string; updated_at: string };
 export type VoteRow = { id: string; poll_id: string; option_id: string; voter_user_id: string; status: "active" | "voided"; cast_at: string; voided_at: string | null; void_reason: string | null };
 export type PollSnapshot = { poll: PollRow; options: PollOptionRow[]; results: Array<{ optionId: string; count: number | null; recordedForViewer: boolean }>; viewerVote: { voteId: string; optionId: string; status: VoteRow["status"] } | null };
 export type VoteCommandResult = { code: "RECORDED" | "ALREADY_VOTED"; vote: VoteRow; message: string };
@@ -44,6 +44,10 @@ export function voidVote(input: { userId: string; pollId: string; voteId: string
 export function getPollSnapshot(userId: string, pollId: string) {
   if (isLocalFormalBoard()) return Promise.resolve(localSnapshot(userId, pollId));
   return supabaseRestRpc<PollSnapshot>("formal_get_poll_snapshot", { p_user_id: userId, p_poll_id: pollId });
+}
+export function listPolls(userId: string, activityId: string) {
+  if (isLocalFormalBoard()) return Promise.resolve(localListPolls(userId, activityId));
+  return supabaseRestRpc<PollRow[]>("formal_list_activity_polls", { p_user_id: userId, p_activity_id: activityId });
 }
 export function getPollResult(userId: string, pollId: string) {
   if (isLocalFormalBoard()) return Promise.resolve(localSnapshot(userId, pollId));

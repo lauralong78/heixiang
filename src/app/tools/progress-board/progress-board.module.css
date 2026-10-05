@@ -83,10 +83,10 @@
 .formalCountdownEmpty { font-size: clamp(28px, 3vw, 48px); letter-spacing: -0.05em; }
 .dashboardActions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
 .dashboardActions button { min-width: 118px; }
-.dashboardActions .dashboardDanger { color: var(--pb-red); background: #ffe2d7; }
-.rolePanel { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 20px; align-items: end; margin: 4px 0 24px; padding: 14px 16px; border: 3px solid var(--pb-ink); background: var(--pb-green); box-shadow: 4px 4px 0 var(--pb-ink); }
+.rolePanel { position: fixed; z-index: 20; top: 170px; right: clamp(20px, 4vw, 72px); display: grid; width: min(300px, calc(100vw - 40px)); gap: 10px; padding: 16px; border: 3px solid var(--pb-ink); border-radius: 12px; background: var(--pb-green); box-shadow: var(--pb-shadow); }
 .rolePanel strong { display: block; margin-top: 4px; font-size: 24px; line-height: 1; }
 .rolePanel p { margin: 0; color: var(--pb-muted); font-size: 14px; line-height: 1.5; }
+.roleLogoutButton { width: 100%; color: var(--pb-red) !important; background: #ffe2d7 !important; }
 .invitePanel { display: grid; gap: 14px; margin: 24px 0; padding: 20px; border: 3px solid var(--pb-ink); background: var(--pb-paper); box-shadow: 6px 6px 0 var(--pb-ink); }
 .invitePanel strong { display: block; margin-top: 6px; font-size: 1.3rem; }
 .invitePanel p { margin: 6px 0 0; color: var(--pb-muted); }
@@ -127,6 +127,9 @@
 .visuallyHidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .message { min-height: 21px; margin: 18px 0 0; color: var(--pb-red); font-size: 14px; font-weight: 700; line-height: 1.55; }
 .message:not(:empty) { border-left: 4px solid currentColor; padding: 8px 12px; background: rgba(255, 250, 240, .68); animation: pb-message-in 220ms cubic-bezier(.2, .8, .2, 1) both; }
+.authRetryButton { min-height: 44px; margin-top: 12px; border: 2px solid var(--pb-ink); padding: 10px 14px; background: var(--pb-yellow); color: var(--pb-ink); font-weight: 800; cursor: pointer; }
+.authRetryButton:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--pb-ink); }
+.authRetryButton:disabled { cursor: wait; opacity: .72; }
 
 .authMode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 4px 0 24px; padding: 5px; border: 3px solid var(--pb-ink); border-radius: 9px; background: rgba(255, 255, 255, 0.35); }
 .authMode button { min-height: 38px; border: 0; box-shadow: none; background: transparent; }

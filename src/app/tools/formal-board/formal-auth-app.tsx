@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { OperationProgress } from "@/components/shell/operation-progress";
 import styles from "../progress-board/progress-board.module.css";
@@ -21,7 +22,7 @@ function extractMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === "object" && "error" in payload) {
     const error = (payload as { error?: { message?: unknown } }).error;
     if (typeof error?.message === "string") {
-      if (error.message.includes("暂时不可用")) return "服务端暂时无法连接数据库，请检查本地网络后重试。";
+      if (error.message.includes("暂时不可用")) return "服务端暂时无法连接数据库，请检查网络后重试。";
       return error.message;
     }
   }
@@ -29,6 +30,7 @@ function extractMessage(payload: unknown, fallback: string) {
 }
 
 export function FormalAuthApp() {
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
@@ -62,10 +64,14 @@ export function FormalAuthApp() {
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviteLink, setInviteLink] = useState("");
   const [inviteTeamName, setInviteTeamName] = useState("");
-  const [message, setMessage] = useState("正在检查登录状态…");
-  const [busy, setBusy] = useState(true);
+  const [message, setMessage] = useState("服务已启动，可直接登录或注册；已有会话将在后台确认。");
+  const [busy, setBusy] = useState(false);
+  const [authChecking, setAuthChecking] = useState(false);
+  const [authAttempt, setAuthAttempt] = useState(0);
+  const [authCheckFailed, setAuthCheckFailed] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const [syncState, setSyncState] = useState<SyncState>("idle");
+  const [manualRefreshInFlight, setManualRefreshInFlight] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [contact, setContact] = useState<Contact>({ value: "", visibility: "private" });
   const [contactInput, setContactInput] = useState("");
@@ -77,11 +83,14 @@ export function FormalAuthApp() {
   const pollRequestRef = useRef(0);
   const pollInFlightRef = useRef(false);
 
-  const refreshBoard = useCallback(async () => {
+  const refreshBoard = useCallback(async (showProgress = false) => {
     if (!user || pollInFlightRef.current) return;
     pollInFlightRef.current = true;
     const requestId = ++pollRequestRef.current;
-    setSyncState("syncing");
+    if (showProgress) {
+      setManualRefreshInFlight(true);
+      setSyncState("syncing");
+    }
     try {
       const activityResponse = await fetch("/api/formal-board/activities", { cache: "no-store" });
       const activityPayload = await activityResponse.json() as { data?: { activities?: Activity[] }; error?: { message?: string } };
@@ -117,6 +126,7 @@ export function FormalAuthApp() {
       }
     } finally {
       pollInFlightRef.current = false;
+      if (showProgress) setManualRefreshInFlight(false);
     }
   }, [selectedActivityId, selectedTeamId, user]);
 
@@ -134,26 +144,51 @@ export function FormalAuthApp() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/formal-board/auth/me", { cache: "no-store" })
-      .then(async (response) => ({ response, payload: await response.json() as unknown }))
-      .then(async ({ response, payload }) => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8_000);
+    const fallbackId = window.setTimeout(() => {
+      if (!cancelled) {
+        setAuthChecking(false);
+        setAuthCheckFailed(true);
+        setMessage("登录状态检查超时，请确认服务正在运行后重试。");
+      }
+    }, 8_500);
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/formal-board/auth/me", { cache: "no-store", signal: controller.signal });
+        if (response.status === 401) {
+          if (!cancelled) {
+            setUser(null);
+            setMessage("服务已连接，但当前没有正式登录会话，请输入账号登录。");
+            setAuthCheckFailed(false);
+          }
+          return;
+        }
+        const payload = await response.json() as unknown;
         if (cancelled) return;
         if (response.ok && payload && typeof payload === "object" && "data" in payload) {
           const data = (payload as { data?: { user?: PublicUser } }).data;
           setUser(data?.user ?? null);
-          setMessage(data?.user ? "已恢复上次登录。" : "");
+          setMessage(data?.user ? "已恢复上次登录。" : "服务已连接，但当前没有正式登录会话，请输入账号登录。");
+          setAuthCheckFailed(false);
         } else {
-          setMessage("");
+          setAuthCheckFailed(true);
+          setMessage(extractMessage(payload, "无法读取登录状态，请重试。"));
         }
-      })
-      .catch(() => {
-        if (!cancelled) setMessage("暂时无法读取登录状态，请检查网络后重试。");
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
+      } catch (error) {
+        if (!cancelled) {
+          setAuthCheckFailed(true);
+          setMessage(error instanceof DOMException && error.name === "AbortError" ? "登录状态检查超时，请确认服务正在运行后重试。" : "暂时无法读取登录状态，请检查网络后重试。");
+        }
+      } finally {
+        if (!cancelled) setAuthChecking(false);
+        window.clearTimeout(timeoutId);
+        window.clearTimeout(fallbackId);
+      }
+    };
+    void checkSession();
+    return () => { cancelled = true; controller.abort(); window.clearTimeout(timeoutId); window.clearTimeout(fallbackId); };
+  }, [authAttempt]);
 
   useEffect(() => {
     if (!user) {
@@ -554,7 +589,7 @@ export function FormalAuthApp() {
       </header>
       <OperationProgress
         scope="正式看板"
-        syncing={busy || syncState === "syncing"}
+        syncing={authChecking || busy || manualRefreshInFlight}
         messages={[message, activityMessage, teamMessage, taskMessage, inviteMessage, contactMessage, auditMessage, attachmentMessage]}
       />
       <section className={styles.setupShell}>
@@ -579,7 +614,7 @@ export function FormalAuthApp() {
                 <div className={styles.dashboardStatus}>
                   <span>SERVER SESSION</span>
                   <strong>{selectedActivity?.status || "READY"}</strong>
-                  <small>{selectedActivity ? "跨设备数据已连接" : "等待选择活动"}</small>
+                  <small>{selectedActivity ? "活动数据已连接" : "等待选择活动"}</small>
                 </div>
                 {selectedActivity && <div className={`${styles.formalCountdown} ${remainingSeconds === 0 ? styles.formalCountdownEnded : ""}`} aria-label="活动倒计时">
                   <span className={styles.formalCountdownLabel}>TIME REMAINING</span>
@@ -594,11 +629,12 @@ export function FormalAuthApp() {
               <div className={styles.rolePanel} aria-label="当前身份和权限">
                 <div><span className={styles.formIndex}>CURRENT ROLE / 当前身份</span><strong>{currentRoleLabel}</strong></div>
                 <p>{currentRoleScope}</p>
+                <button type="button" className={styles.roleLogoutButton} onClick={logout} disabled={busy}>退出登录</button>
               </div>
               <div className={styles.dashboardActions}>
                 <button type="button" onClick={() => document.getElementById("formal-activity-form")?.scrollIntoView({ behavior: "smooth", block: "center" })}>创建活动</button>
-                <button type="button" onClick={() => void refreshBoard()}>刷新数据</button>
-                <button type="button" className={styles.dashboardDanger} onClick={logout} disabled={busy}>退出登录</button>
+                <button type="button" onClick={() => void refreshBoard(true)} disabled={manualRefreshInFlight}>刷新数据</button>
+                <button type="button" onClick={() => router.push("/tools/formal-vote-wall")}>打开正式投票墙</button>
               </div>
               <p className={styles.authHint} role="status" aria-live="polite">数据同步：{syncLabel(syncState)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString("zh-CN")}` : ""}。每 8 秒检查一次；失败时保留当前已知数据，不会静默覆盖。</p>
               <section className={styles.invitePanel} aria-label="可选联系方式">
@@ -708,8 +744,8 @@ export function FormalAuthApp() {
             <>
               <span className={styles.formIndex}>01 / {mode === "login" ? "LOG IN" : "SIGN UP"}</span>
               <div className={styles.authMode} role="tablist" aria-label="账号操作">
-                <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? styles.authModeActive : ""} onClick={() => { setMode("login"); setMessage(""); }}>登录</button>
-                <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? styles.authModeActive : ""} onClick={() => { setMode("register"); setMessage(""); }}>注册</button>
+                <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? styles.authModeActive : ""} onPointerDown={() => { setMode("login"); setMessage(""); }} onFocus={() => { setMode("login"); setMessage(""); }} onClick={() => { setMode("login"); setMessage(""); }}>登录</button>
+                <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? styles.authModeActive : ""} onPointerDown={() => { setMode("register"); setMessage(""); }} onFocus={() => { setMode("register"); setMessage(""); }} onClick={() => { setMode("register"); setMessage(""); }}>注册</button>
               </div>
               <form onSubmit={submit}>
                 <label>
@@ -731,6 +767,7 @@ export function FormalAuthApp() {
                 </button>
               </form>
               <p className={styles.message} role="status" aria-live="polite">{message}</p>
+              {authCheckFailed && <button type="button" className={styles.authRetryButton} onClick={() => { setAuthChecking(true); setAuthCheckFailed(false); setAuthAttempt((attempt) => attempt + 1); }} disabled={authChecking}>{authChecking ? "重新检查中…" : "重新检查登录状态"}</button>}
               <p className={styles.authHint}>账号注册和登录会连接真实服务器；失败时不会显示“已保存”假提示。</p>
             </>
           )}

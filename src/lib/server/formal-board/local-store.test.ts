@@ -66,6 +66,29 @@ test("local scoped invites preserve team semantics and enforce reuse limits", as
   assert.equal(memberInvite.team_id, captainJoin.team_id);
 });
 
+test("local vote rejects a host when host voting is disabled", async () => {
+  const suffix = Date.now().toString();
+  const host = await localRegister(`vote-host-${suffix}`, "local-test-password");
+  const activity = localCreateActivity({ userId: host.id, title: "host vote permission", description: "", requestId: `vote-activity-${suffix}` });
+  localUpdateActivity({ userId: host.id, activityId: activity.id, title: activity.title, description: activity.description, status: "open", expectedVersion: 1, requestId: `vote-open-activity-${suffix}` });
+  const poll = localCreatePoll({ userId: host.id, activityId: activity.id, title: "host vote", description: "", hostEligible: false, allowSelfVote: true, resultMode: "live", requestId: `vote-poll-${suffix}` });
+  const option = localCreateOption({ userId: host.id, pollId: poll.id, title: "candidate", description: "", link: null, submittedBy: null, requestId: `vote-option-${suffix}` });
+  localUpdatePoll({ userId: host.id, pollId: poll.id, open: true, close: false, expectedVersion: 1, requestId: `vote-open-${suffix}` });
+  assert.throws(() => localCastVote({ userId: host.id, pollId: poll.id, optionId: option.id, requestId: `vote-host-submit-${suffix}` }), (error: unknown) => error instanceof FormalBoardLocalError && error.status === 403 && error.message.includes("主持人未获得投票资格"));
+});
+
+test("local host can see counts even when poll result mode is hidden", async () => {
+  const suffix = Date.now().toString();
+  const host = await localRegister(`hidden-host-${suffix}`, "local-test-password");
+  const activity = localCreateActivity({ userId: host.id, title: "hidden host result", description: "", requestId: `hidden-activity-${suffix}` });
+  localUpdateActivity({ userId: host.id, activityId: activity.id, title: activity.title, description: activity.description, status: "open", expectedVersion: 1, requestId: `hidden-open-activity-${suffix}` });
+  const poll = localCreatePoll({ userId: host.id, activityId: activity.id, title: "hidden result", description: "", hostEligible: true, allowSelfVote: true, resultMode: "hidden", requestId: `hidden-poll-${suffix}` });
+  const option = localCreateOption({ userId: host.id, pollId: poll.id, title: "candidate", description: "", link: null, submittedBy: null, requestId: `hidden-option-${suffix}` });
+  localUpdatePoll({ userId: host.id, pollId: poll.id, open: true, close: false, expectedVersion: 1, requestId: `hidden-open-${suffix}` });
+  localCastVote({ userId: host.id, pollId: poll.id, optionId: option.id, requestId: `hidden-vote-${suffix}` });
+  assert.equal(localSnapshot(host.id, poll.id).results[0]?.count, 1);
+});
+
 test("local task creation is captain-only even for the activity host", async () => {
   const suffix = Date.now().toString();
   const host = await localRegister(`task-host-${suffix}`, "local-test-password");

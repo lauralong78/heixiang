@@ -46,6 +46,9 @@ yarn-error.log*
 # local formal-board single-instance data (accounts, sessions, activities)
 /data/
 
+# Supabase CLI local metadata
+/supabase/.temp/
+
 # vercel
 .vercel
 
